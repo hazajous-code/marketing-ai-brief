@@ -1,0 +1,6 @@
+streamlit
+feedparser
+deep-translator
+requests
+python-dotenv
+APScheduler
