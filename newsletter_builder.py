@@ -123,6 +123,20 @@ def _get_ai_tools_for_date(date_str: str) -> List[dict]:
 
 # ── LLM helpers ──────────────────────────────────────────────────────
 
+def _fetch_live_ai_tools(limit: int = 6) -> List[dict]:
+    """Fetch AI tool news live (for index page which needs fresh data)."""
+    try:
+        from collect_news import fetch_ai_tools_news
+        tools = fetch_ai_tools_news(limit=limit)
+        for t in tools:
+            if isinstance(t.get("published_at"), datetime):
+                t["published_at"] = t["published_at"].isoformat()
+        return tools
+    except Exception as e:
+        logger.warning("Failed to fetch live AI tools: %s", e)
+        return []
+
+
 def _generate_digest(articles: List[dict]) -> List[dict]:
     import requests as _req
 
@@ -131,30 +145,19 @@ def _generate_digest(articles: List[dict]) -> List[dict]:
         "AI Automation in Marketing Execution",
         "Marketing AI Trend",
     ]
-    payload = json.dumps([
-        {"title": a.get("title", ""), "summary": (a.get("content") or "")[:260],
-         "link": a.get("link", ""), "category": a.get("category", "")}
-        for a in articles[:20]
-    ], ensure_ascii=False)
+    titles = "\n".join(f"- {a.get('title', '')}" for a in articles[:8])
 
     prompt = (
-        "You are a global marketing strategist writing a premium daily brief.\n"
-        "Classify the news into exactly 3 fixed categories and write insight-focused analysis.\n"
-        "Do NOT summarize headlines. Extract strategic patterns and interpret meaning.\n"
-        "Tone: professional newsletter, concise consulting report.\n\n"
-        "Categories:\n- Generative Engine Optimization\n- AI Automation in Marketing Execution\n- Marketing AI Trend\n\n"
-        "Return ONLY valid JSON array with exactly 3 objects:\n"
-        '[{"title":"category","summary":"2-3 lines","key_points":["...","..."],'
-        '"sources":[{"title":"...","link":"..."}],'
-        '"marketing_insight":"...","strategic_implication":"..."}]\n'
-        "Rules: 3 sections only, 2-3 sources each from provided news, no markdown.\n\n"
-        f"News:\n{payload}"
+        "Classify these news into 3 categories. Write in Korean.\n"
+        "Categories: 1) Generative Engine Optimization 2) AI Automation in Marketing Execution 3) Marketing AI Trend\n"
+        'Return JSON: [{"title":"category","summary":"2줄 요약","key_points":["핵심1","핵심2"],"marketing_insight":"인사이트","strategic_implication":"시사점"}]\n'
+        f"News:\n{titles}"
     )
     try:
         res = _req.post(
             "http://localhost:11434/api/generate",
             json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=60,
+            timeout=300,
         )
         res.raise_for_status()
         raw = res.json().get("response", "").strip()
@@ -182,43 +185,27 @@ def _generate_period_report(items: List[dict], period: str) -> dict:
     """Generate a weekly or monthly report via Ollama. Returns report dict."""
     import requests as _req
 
-    max_items = 50 if period == "monthly" else 30
-    payload = json.dumps([
-        {"title": i.get("title", ""), "source": i.get("source", ""),
-         "date": i.get("published_str", i.get("published_at", "")[:10]),
-         "summary": (i.get("content") or "")[:200], "lang": i.get("lang", "en")}
+    max_items = 15 if period == "monthly" else 10
+    titles = "\n".join(
+        f"- {i.get('title', '')} ({i.get('source', '')})"
         for i in items[:max_items]
-    ], ensure_ascii=False)
+    )
 
-    if period == "monthly":
-        prompt = f"""You are a global marketing strategist writing a premium MONTHLY strategic brief.
-Analyze {len(items)} articles from the past 30 days.
-Return ONLY valid JSON:
-{{"period":"monthly","headline":"one-line","executive_summary":"5-6 sentences",
-"trend_sections":[{{"category":"Generative Engine Optimization","summary":"3-4 sent","key_points":["..."],"trend_direction":"accelerating/stable/emerging","notable_sources":["..."]}},
-{{"category":"AI Automation in Marketing Execution","summary":"...","key_points":["..."],"trend_direction":"...","notable_sources":["..."]}},
-{{"category":"Marketing AI Trend","summary":"...","key_points":["..."],"trend_direction":"...","notable_sources":["..."]}}],
-"source_analysis":{{"total_articles":{len(items)},"top_sources":["..."],"language_split":"KR X% / EN Y%"}},
-"strategic_recommendations":["rec1","rec2","rec3"],"next_month_outlook":"2-3 sentences"}}
-Rules: Korean output, insight-focused, consulting tone. No markdown.
-Articles:\n{payload}"""
-    else:
-        prompt = f"""You are a global marketing strategist writing a premium WEEKLY trend report.
-Analyze {len(items)} articles from the past 7 days.
-Return ONLY valid JSON:
-{{"period":"weekly","headline":"one-line","executive_summary":"3-4 sentences",
-"trend_sections":[{{"category":"Generative Engine Optimization","summary":"2-3 sent","key_points":["..."],"notable_sources":["..."]}},
-{{"category":"AI Automation in Marketing Execution","summary":"...","key_points":["..."],"notable_sources":["..."]}},
-{{"category":"Marketing AI Trend","summary":"...","key_points":["..."],"notable_sources":["..."]}}],
-"top_sources":["source1","source2","source3"],"strategic_outlook":"2-3 sentences"}}
-Rules: Korean output, insight-focused, consulting tone. No markdown.
-Articles:\n{payload}"""
+    period_kr = "월간" if period == "monthly" else "주간"
+    prompt = (
+        f"{len(items)}개 기사를 분석해 {period_kr} 마케팅 AI 리포트를 작성하세요.\n"
+        "3개 카테고리별로 정리: 1)Generative Engine Optimization 2)AI Automation in Marketing Execution 3)Marketing AI Trend\n"
+        'JSON 형식: {"period":"' + period + '","headline":"한줄 제목","executive_summary":"3줄 요약",'
+        '"trend_sections":[{"category":"카테고리명","summary":"2줄","key_points":["핵심1","핵심2"],"notable_sources":["출처"]}],'
+        '"strategic_outlook":"전망 2줄"}\n'
+        f"기사목록:\n{titles}"
+    )
 
     try:
         res = _req.post(
             "http://localhost:11434/api/generate",
             json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=90,
+            timeout=300,
         )
         res.raise_for_status()
         raw = (res.json().get("response") or "").strip()
@@ -660,7 +647,7 @@ def build_report_page(report: dict, report_key: str) -> str:
 
 # ── publish orchestration ────────────────────────────────────────────
 
-def publish_single_date(date_str: str, dates_list: List[str] | None = None) -> Path | None:
+def publish_single_date(date_str: str, dates_list: List[str] | None = None, is_latest: bool = False) -> Path | None:
     articles = _articles_for_date(date_str)
     if not articles:
         logger.info("No articles for %s — skipping.", date_str)
@@ -672,6 +659,8 @@ def publish_single_date(date_str: str, dates_list: List[str] | None = None) -> P
         _save_report_data(f"daily-{date_str}", digest)
 
     ai_tools = _get_ai_tools_for_date(date_str)
+    if not ai_tools and is_latest:
+        ai_tools = _fetch_live_ai_tools(limit=6)
 
     if dates_list is None:
         dates_list = _all_dates()
@@ -808,7 +797,11 @@ def publish_index() -> Path:
     latest_date = dates[0]
     latest_articles = _articles_for_date(latest_date)
     latest_digest = _load_digest_for_date(latest_date)
+
+    # AI tools: try archive first, then fetch live
     latest_ai_tools = _get_ai_tools_for_date(latest_date)
+    if not latest_ai_tools:
+        latest_ai_tools = _fetch_live_ai_tools(limit=6)
 
     # Recent = last 7 days of issues (as cards), older = the rest (collapsed)
     recent_issues = []
@@ -846,7 +839,7 @@ def publish_daily(date_str: str | None = None) -> None:
     if date_str not in dates:
         dates = sorted(set(dates) | {date_str}, reverse=True)
 
-    publish_single_date(date_str, dates)
+    publish_single_date(date_str, dates, is_latest=True)
     publish_index()
 
 
