@@ -74,7 +74,7 @@ a:hover { color: var(--accent-hover); }
 
 /* ── layout ───────────────────────────────── */
 .container {
-    max-width: 780px;
+    max-width: 960px;
     margin: 0 auto;
     padding: 0 24px;
 }
@@ -415,10 +415,117 @@ a:hover { color: var(--accent-hover); }
     flex-shrink: 0;
 }
 
+/* ── subscribe banner ─────────────────────── */
+.subscribe-banner {
+    background: linear-gradient(135deg, var(--accent) 0%, #C46644 100%);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.sub-icon { font-size: 28px; }
+.sub-copy { flex: 1; min-width: 200px; }
+.sub-title { font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 2px; }
+.sub-desc { font-size: 12px; color: rgba(255,255,255,0.8); margin: 0; }
+
+/* ── tab section / archive ───────────────── */
+.tab-section {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 2px solid var(--border-strong);
+}
+.archive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.archive-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.archive-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+}
+.archive-card-link {
+    display: block;
+    padding: 14px;
+    text-decoration: none;
+}
+.archive-date {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 4px;
+}
+.archive-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 0;
+}
+.archive-older {
+    margin: 16px 0 28px;
+}
+.archive-toggle {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    padding: 8px 0;
+    letter-spacing: 0.3px;
+}
+.archive-toggle:hover { color: var(--accent-hover); }
+
+/* ── report styles ────────────────────────── */
+.report-header {
+    margin-bottom: 16px;
+}
+.report-headline {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+.report-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin: 0;
+}
+.report-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+    margin-top: 16px;
+}
+
+/* ── coming soon ──────────────────────────── */
+.coming-soon {
+    font-size: 13px;
+    color: var(--text-faint);
+    padding: 24px;
+    text-align: center;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+}
+
 /* ── responsive ───────────────────────────── */
 @media (max-width: 600px) {
     .container { padding: 0 16px; }
     .masthead { flex-direction: column; gap: 8px; }
     .masthead-right { text-align: left; }
     .digest-grid, .article-grid, .ai-tools-grid { grid-template-columns: 1fr; }
+    .archive-grid { grid-template-columns: repeat(2, 1fr); }
 }
