@@ -1037,6 +1037,16 @@ def _render_period_report_html(report: dict) -> str:
 
 # ── full page builders ───────────────────────────────────────────────
 
+def _stylesheet_href(css_path: str) -> str:
+    """Cache-bust so GitHub Pages / browsers load fresh style.css after deploys."""
+    p = _DOCS_DIR / "style.css"
+    try:
+        v = str(int(p.stat().st_mtime)) if p.exists() else "1"
+    except OSError:
+        v = "1"
+    return f"{css_path}?v={v}"
+
+
 def _html_wrapper(title: str, css_path: str, body: str) -> str:
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -1044,7 +1054,7 @@ def _html_wrapper(title: str, css_path: str, body: str) -> str:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{escape(title)}</title>
-    <link rel="stylesheet" href="{css_path}">
+    <link rel="stylesheet" href="{_stylesheet_href(css_path)}">
 </head>
 <body>
 <div class="container">
