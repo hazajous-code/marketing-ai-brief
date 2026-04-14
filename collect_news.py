@@ -162,13 +162,28 @@ def _ko_site_google_feeds() -> Tuple[str, ...]:
     return tuple(queries)
 
 RESEARCH_FEEDS_DIRECT: Tuple[str, ...] = (
-    "https://sloanreview.mit.edu/feed/",                # MIT Sloan — works
-    "https://www.ipsos.com/en/rss.xml",                 # Ipsos — works
+    "https://sloanreview.mit.edu/feed/",                # MIT Sloan Management Review
+    "https://www.ipsos.com/en/rss.xml",                 # Ipsos
     "https://hai.stanford.edu/news/rss.xml",            # Stanford HAI
     "https://www.brookings.edu/topic/artificial-intelligence/feed/", # Brookings AI
+    # Academic journals & top-tier publications
+    "https://www.nature.com/subjects/artificial-intelligence.rss",  # Nature AI
+    "https://www.science.org/action/showFeed?type=searchTopic&taxonomyUri=%2Ftopic%2Fartificial-intelligence&feedType=rss", # Science AI
+    "https://feeds.feedburner.com/acabortnews",         # ACM TechNews
+    "https://blog.google/technology/ai/rss/",           # Google AI Blog
+    "https://openai.com/blog/rss/",                     # OpenAI Blog
+    "https://ai.meta.com/blog/rss/",                    # Meta AI Blog
+    "https://deepmind.google/blog/rss.xml",             # DeepMind Blog
+    "https://www.technologyreview.com/feed/",           # MIT Technology Review
+    "https://spectrum.ieee.org/feeds/topic/artificial-intelligence.rss", # IEEE Spectrum AI
+    "https://distill.pub/rss.xml",                      # Distill (ML explainers)
+    "https://blogs.microsoft.com/ai/feed/",             # Microsoft AI Blog
+    # Korean research & institutions
+    "https://www.aitimes.com/rss/allArticle.xml",       # AI 타임스
+    "https://www.etnews.com/rss/news.xml",              # 전자신문
+    "https://www.zdnet.co.kr/rss/",                     # ZDNet Korea
 )
 
-# Many research sites block/break their RSS. Use Google News site: as proxy.
 _RESEARCH_SITES: Tuple[str, ...] = (
     "hbr.org",              # Harvard Business Review
     "mckinsey.com",         # McKinsey
@@ -189,6 +204,14 @@ _RESEARCH_SITES: Tuple[str, ...] = (
     "mediapost.com",        # MediaPost
     "chiefmartec.com",      # Chief Martec (MarTech landscape)
     "hubspot.com/marketing",  # HubSpot research
+    # Academic / journal sites via Google News proxy
+    "nature.com",           # Nature
+    "science.org",          # Science
+    "cell.com",             # Cell Press
+    "technologyreview.com", # MIT Technology Review
+    "wired.com",            # Wired
+    "spectrum.ieee.org",    # IEEE Spectrum
+    "arxiv.org",            # arXiv (via Google News for commentary)
 )
 
 
@@ -205,6 +228,8 @@ ARXIV_FEEDS: Tuple[str, ...] = (
     "http://export.arxiv.org/api/query?search_query=all:marketing+AND+all:ai&start=0&max_results=5",
     "http://export.arxiv.org/api/query?search_query=all:recommendation+AND+all:advertising&start=0&max_results=5",
     "http://export.arxiv.org/api/query?search_query=all:generative+AND+all:marketing&start=0&max_results=5",
+    "http://export.arxiv.org/api/query?search_query=all:large+language+model+AND+all:marketing&start=0&max_results=5",
+    "http://export.arxiv.org/api/query?search_query=all:multimodal+AND+all:advertising&start=0&max_results=3",
 )
 
 # ── AI Tool launch feeds ──────────────────────────────────────────
@@ -269,25 +294,35 @@ AI_TOOL_BRAND_SIGNALS: Tuple[str, ...] = (
 # Tier 1 = aggregators (Google News)          (fill gaps,   up to 4/domain)
 # Tier 0 = academic preprints (arXiv)         (last resort, cap 4 total)
 _SOURCE_PRIORITY: Dict[str, int] = {
-    # Tier 3: Research & Consulting (by domain AND by source name for Google News proxied articles)
+    # Tier 3: Research, Consulting & Academic Journals
     "hbr.org": 3, "mckinsey.com": 3, "bcg.com": 3,
     "sloanreview.mit.edu": 3, "deloitte.com": 3,
     "accenture.com": 3, "forrester.com": 3, "gartner.com": 3,
     "kantar.com": 3, "nielsen.com": 3, "ipsos.com": 3,
     "pwc.com": 3, "warc.com": 3, "thinkwithgoogle.com": 3,
     "bain.com": 3, "wpp.com": 3,
-    # Source name matches (Google News entries carry source name, not domain)
+    # Academic journals & labs
+    "nature.com": 3, "science.org": 3, "cell.com": 3,
+    "technologyreview.com": 3, "spectrum.ieee.org": 3,
+    "hai.stanford.edu": 3, "brookings.edu": 3,
+    "deepmind.google": 3, "distill.pub": 3,
+    # Source name matches (Google News entries)
     "harvard business": 3, "mckinsey": 3, "boston consulting": 3,
     "deloitte": 3, "gartner": 3, "forrester": 3, "kantar": 3,
     "nielsen": 3, "ipsos": 3, "bain": 3, "mit sloan": 3,
     "think with google": 3, "warc": 3,
+    "nature": 3, "science": 3, "ieee": 3, "mit technology": 3,
+    "deepmind": 3, "stanford": 3,
     # Tier 2: Primary media & platforms
     "openai.com": 2, "blog.google": 2, "ai.meta.com": 2,
+    "blogs.microsoft.com": 2, "openai.com/blog": 2,
     "adweek.com": 2, "marketingdive.com": 2, "techcrunch.com": 2,
+    "wired.com": 2, "theverge.com": 2, "venturebeat.com": 2,
     "bloter.net": 2, "platum.kr": 2, "zdnet.co.kr": 2,
     "etnews.com": 2, "tech.kakao.com": 2, "d2.naver.com": 2,
     "digitaltoday.co.kr": 2, "it.chosun.com": 2,
     "byline.network": 2, "venturesquare.net": 2,
+    "aitimes.com": 2,
     # Tier 1: Aggregators
     "news.google.com": 1,
     # Tier 0: Academic preprints
@@ -654,7 +689,7 @@ def fetch_ai_tools_news(limit: int = 12, content_max: int = 520) -> List[Dict[st
 # ── YouTube AI creator collector ──────────────────────────────────────
 # (channel_name, channel_id, region)
 YOUTUBE_AI_CHANNELS_GLOBAL: List[Tuple[str, str, str]] = [
-    # Global
+    # ── Global AI / Tech ──
     ("Fireship",          "UCsBjURrPoezykLs9EqgamOA", "global"),
     ("Two Minute Papers", "UCbfYPyITQ-7l4upoX8nvctg", "global"),
     ("Lex Fridman",       "UCSHZKyawb77ixDdsGog4iWA", "global"),
@@ -663,7 +698,7 @@ YOUTUBE_AI_CHANNELS_GLOBAL: List[Tuple[str, str, str]] = [
     ("AI Explained",      "UCNJ1Ymd5yFuUPtn21xtRbbw", "global"),
     ("Wes Roth",          "UCx3-JSNXhOJn0RVFbcZ0KVA", "global"),
     ("The AI Breakdown",  "UCq80GDpRHdFHosVEBMCpKlA", "global"),
-    # Korea
+    # ── Korea — AI / Tech / Development ──
     ("테크몽 Techmong",    "UCtm0cSECNR04lkhRsiE4pjg", "kr"),
     ("노마드 코더 Nomad Coders", "UCUpJs89fSBXNolQGOYKn0YQ", "kr"),
     ("조코딩 JoCoding",    "UCQNE2JmbasNYbjGAcuBiRRg", "kr"),
@@ -672,6 +707,17 @@ YOUTUBE_AI_CHANNELS_GLOBAL: List[Tuple[str, str, str]] = [
     ("셜록현준",            "UCjNaSmJ8fncLX-X5d0lVx5A", "kr"),
     ("AI 프렌즈",          "UCdMBMJdimVjfjHuy5VhJ4gg", "kr"),
     ("캐치딥 CatchDeep",   "UCnxSiqA4PUbJMn7RyNldXPg", "kr"),
+    # ── Korea — Tech YouTubers (added) ──
+    ("잇섭 itssub",        "UCF4Wxdo3inmxP-Y59wXDsFw", "kr"),
+    ("테크플러스 Tech+",    "UCjNpjCIw1FG5foMYPFGH9MA", "kr"),
+    ("디에디트 THE EDIT",   "UCwMfp5jfUBJGFBt40NOJKMA", "kr"),
+    ("김짤 Kimzzal",       "UCzEvmCAKPvEtAGiT_9UBYpQ", "kr"),
+    ("용호수 테크",         "UCsb3o2FS1JdZbk_DdbBGx6A", "kr"),
+    ("코딩애플",            "UCSLrpBAzr-ROVNFT-lk4jUA", "kr"),
+    ("드로우앤드류 DrawAndrew", "UCdeJUQ3mIkOgZ8GLEM0HhpQ", "kr"),
+    ("곽튜브 AI",           "UClRNDVO8093rmRTtLe4GEPw", "kr"),
+    ("테크읽어주는나무",      "UCSCRVBx8aFcbpGpf_z5kIOg", "kr"),
+    ("AI양브로",            "UCWooBEh83M-a0pOLmmXX_4Q", "kr"),
 ]
 
 
