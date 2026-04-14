@@ -633,8 +633,91 @@ def _kr_ai_radar_match(blob: str) -> bool:
     )
 
 
+_KR_MARKETING_KO: Tuple[str, ...] = (
+    "마케팅",
+    "광고",
+    "브랜드",
+    "캠페인",
+    "애드테크",
+    "에드테크",
+    "퍼포먼스",
+    "리테일",
+    "커머스",
+    "이커머스",
+    "CRM",
+    "콘텐츠",
+    "디지털 마케팅",
+    "바이럴",
+    "인플루언서",
+    "SNS",
+    "키워드",
+    "SEO",
+    "SEM",
+    "퍼널",
+    "전환",
+    "ROAS",
+    "구독",
+    "고객경험",
+    "고객 경험",
+    "마케터",
+    "CMO",
+    "미디어믹스",
+    "미디어 믹스",
+    "DSP",
+    "RTB",
+    "프로모션",
+    "세일즈",
+    "세일즈 마케팅",
+)
+
+_KR_MARKETING_EN: Tuple[str, ...] = (
+    "marketing",
+    "advertising",
+    "adtech",
+    "martech",
+    "brand ",
+    " campaign",
+    "cmo",
+    "retail media",
+    "performance marketing",
+    "customer experience",
+    "conversion",
+    "programmatic",
+    "commerce",
+    "e-commerce",
+    "ecommerce",
+)
+
+
+def _kr_radar_marketing_priority(blob: str) -> int:
+    """Higher = more marketing / growth / ad-related (used to sort KR radar)."""
+    if not blob or not blob.strip():
+        return 0
+    score = 0
+    bl = blob.lower()
+    for kw in _KR_MARKETING_KO:
+        if kw in blob:
+            score += 4
+    for kw in _KR_MARKETING_EN:
+        if kw in bl:
+            score += 3
+    # AI × marketing crossover (strong signal for this product)
+    has_ai = bool(
+        _KR_AI_RADAR_PAT.search(blob)
+        or "ai" in bl
+        or "llm" in bl
+        or "generative" in bl
+        or "인공지능" in blob
+        or "생성형" in blob
+    )
+    has_mkt = any(k in blob for k in ("마케팅", "광고", "브랜드", "캠페인", "애드테크", "퍼포먼스"))
+    if has_ai and has_mkt:
+        score += 12
+    return score
+
+
 def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[Dict[str, Any]]:
-    """Headlines from Korean tech/biz RSS, filtered for AI-related topics (build-time snapshot)."""
+    """Headlines from Korean tech/biz RSS; AI-related gate, then marketing keyword priority + recency."""
     if limit <= 0:
         return []
 
@@ -672,6 +755,7 @@ def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[D
                     source = _domain_label(link) or _domain_label(url) or "Feed"
 
                 korean = _is_korean(title + content)
+                rank_blob = f"{title} {content}"
                 collected.append({
                     "id": _normalize_link(link) or f"{_normalize_title(title)}-{pub.isoformat()}",
                     "title": title,
@@ -682,11 +766,17 @@ def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[D
                     "content": content[:400],
                     "is_new": now - pub <= timedelta(hours=36),
                     "lang": "ko" if korean else "en",
+                    "_mkt_rank": _kr_radar_marketing_priority(rank_blob),
                 })
             except Exception:
                 continue
 
-    collected.sort(key=lambda x: -x["published_at"].timestamp())
+    # Marketing-related first, then newest within same tier
+    collected.sort(
+        key=lambda x: (-x.get("_mkt_rank", 0), -x["published_at"].timestamp())
+    )
+    for item in collected:
+        item.pop("_mkt_rank", None)
     return collected[:limit]
 
 

@@ -699,7 +699,7 @@ def _render_dashboard_hero(kr_items: List[dict], snapshot_kst: str) -> str:
                 <span class="dash-summary-left">
                     <span class="dash-eyebrow">국내 피드</span>
                     <span class="dash-title">한국 AI 업데이트 체크</span>
-                    <span class="dash-sub">Platum · Kakao Tech · Naver D2 · Digital Today · AI타임스</span>
+                    <span class="dash-sub">Platum · Kakao Tech · Naver D2 · Digital Today · AI타임스 · 마케팅·광고 관련 기사 우선</span>
                 </span>
                 <span class="dash-summary-right">
                     <span class="dash-meta">수집 시각 {escape(snapshot_kst)} KST</span>
