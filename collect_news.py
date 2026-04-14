@@ -37,6 +37,13 @@ EN_KEYWORD_FILTERS: Tuple[str, ...] = (
     "marketing automation",
     "search AI",
     "recommendation system",
+    "AI advertising platform",
+    "performance marketing AI",
+    "brand strategy AI",
+    "retail media AI",
+    "AI content marketing",
+    "martech AI",
+    "CMO artificial intelligence",
 )
 
 EN_INSIGHT_KEYWORDS: Tuple[str, ...] = (
@@ -91,6 +98,17 @@ EN_SOURCE_FEEDS: Tuple[str, ...] = (
     "https://techcrunch.com/category/artificial-intelligence/feed/",
     "https://techcrunch.com/tag/advertising-tech/feed/",
     "https://techcrunch.com/tag/e-commerce/feed/",
+    # Expanded sources
+    "https://venturebeat.com/category/ai/feed/",
+    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+    "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+    "https://www.wired.com/feed/category/business/latest/rss",
+    "https://www.technologyreview.com/feed/",
+    "https://www.businessinsider.com/sai/rss",
+    "https://digiday.com/feed/",
+    "https://www.emarketer.com/rss.xml",
+    "https://searchengineland.com/feed",
+    "https://martechtoday.com/feed",
 )
 
 KO_SOURCE_FEEDS: Tuple[str, ...] = (
@@ -216,7 +234,7 @@ _SOURCE_PRIORITY: Dict[str, int] = {
     # Tier 0: Academic preprints
     "arxiv.org": 0, "export.arxiv.org": 0,
 }
-_TIER_DOMAIN_CAP: Dict[int, int] = {3: 3, 2: 3, 1: 3, 0: 1}
+_TIER_DOMAIN_CAP: Dict[int, int] = {3: 4, 2: 4, 1: 3, 0: 1}
 _ARXIV_TOTAL_CAP = 2  # hard ceiling: at most 2 arXiv papers in the final list
 
 
@@ -373,7 +391,7 @@ def _fetch_entries(url: str) -> List[Any]:
 
 
 # ── main collector ──────────────────────────────────────────────────
-def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 30) -> List[Dict[str, Any]]:
+def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 50) -> List[Dict[str, Any]]:
     if not feed_urls or limit <= 0:
         return []
 
@@ -572,3 +590,109 @@ def fetch_ai_tools_news(limit: int = 10, content_max: int = 520) -> List[Dict[st
             break
 
     return result
+
+
+# ── YouTube AI creator collector ──────────────────────────────────────
+# Channel IDs for popular AI/tech YouTubers
+YOUTUBE_AI_CHANNELS: Dict[str, str] = {
+    "Fireship":          "UCsBjURrPoezykLs9EqgamOA",
+    "Two Minute Papers": "UCbfYPyITQ-7l4upoX8nvctg",
+    "Lex Fridman":       "UCSHZKyawb77ixDdsGog4iWA",
+    "Yannic Kilcher":    "UCZHmQk67mSJgfCCTn7xBfew",
+    "Matt Wolfe":        "UCbmNph6atAoGfqLoCL_duAg",
+    "AI Explained":      "UCNJ1Ymd5yFuUPtn21xtRbbw",
+    "Wes Roth":          "UCx3-JSNXhOJn0RVFbcZ0KVA",
+    "The AI Breakdown":  "UCq80GDpRHdFHosVEBMCpKlA",
+}
+
+
+def _yt_video_id(link: str) -> str:
+    """Extract YouTube video ID from a watch URL."""
+    m = re.search(r"(?:v=|/embed/|youtu\.be/)([a-zA-Z0-9_-]{11})", link or "")
+    return m.group(1) if m else ""
+
+
+def _clean_yt_description(text: str) -> str:
+    """Keep only the first meaningful paragraph of a YouTube description."""
+    text = _strip_html(text or "")
+    # stop at first blank line or URL or timestamp block
+    lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            if lines:
+                break
+            continue
+        if re.match(r"https?://", stripped) or re.match(r"\d+:\d+", stripped):
+            break
+        lines.append(stripped)
+    cleaned = " ".join(lines)
+    return cleaned[:400] + ("…" if len(cleaned) > 400 else "")
+
+
+def fetch_youtube_ai_news(limit: int = 8, days: int = 14) -> List[Dict[str, Any]]:
+    """Fetch recent videos from curated AI/marketing YouTube channels via RSS."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+    feed_urls = [
+        (channel, f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}")
+        for channel, cid in YOUTUBE_AI_CHANNELS.items()
+    ]
+
+    url_entries: List[tuple[str, str, List[Any]]] = []
+    with ThreadPoolExecutor(max_workers=min(8, len(feed_urls))) as pool:
+        future_to_meta = {
+            pool.submit(_fetch_entries, url): (channel, url)
+            for channel, url in feed_urls
+        }
+        for future in as_completed(future_to_meta):
+            channel, url = future_to_meta[future]
+            url_entries.append((channel, url, future.result()))
+
+    collected: List[Dict[str, Any]] = []
+    seen: set = set()
+
+    for channel, url, entries in url_entries:
+        for entry in entries[:5]:  # newest 5 per channel
+            try:
+                title = _strip_html(entry.get("title", "Untitled"))
+                link = (entry.get("link") or "").strip()
+                pub = _parse_date(entry)
+                if pub < cutoff:
+                    continue
+                key = _normalize_link(link)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                raw_desc = (
+                    entry.get("summary") or
+                    entry.get("description") or
+                    entry.get("yt_videodescription") or ""
+                )
+                description = _clean_yt_description(raw_desc)
+                video_id = _yt_video_id(link)
+                thumbnail = (
+                    f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
+                    if video_id else ""
+                )
+
+                collected.append({
+                    "id": key or f"yt-{_normalize_title(title)}-{pub.isoformat()}",
+                    "title": title,
+                    "link": link,
+                    "source": channel,
+                    "published_at": pub,
+                    "published_str": pub.strftime("%Y-%m-%d"),
+                    "content": description,
+                    "thumbnail": thumbnail,
+                    "video_id": video_id,
+                    "is_new": now - pub <= timedelta(hours=48),
+                    "lang": "en",
+                    "is_youtube": True,
+                })
+            except Exception:
+                continue
+
+    collected.sort(key=lambda x: -x["published_at"].timestamp())
+    return collected[:limit]

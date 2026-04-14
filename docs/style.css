@@ -302,6 +302,27 @@ a:hover { color: var(--accent-hover); }
     line-height: 1.45;
     letter-spacing: -0.2px;
 }
+.ins-keypoint {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-text, var(--accent));
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 0 0 12px;
+    line-height: 1.6;
+}
+.ins-kp-label {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 8px;
+    vertical-align: middle;
+}
 .ins-text {
     font-size: 13.5px;
     line-height: 1.85;
@@ -484,6 +505,117 @@ a:hover { color: var(--accent-hover); }
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
+}
+
+/* ── YouTube video cards ───────────────────── */
+.yt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+}
+.yt-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .15s, transform .15s;
+}
+.yt-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.10);
+    transform: translateY(-2px);
+}
+.yt-thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--bg-elevated);
+    overflow: hidden;
+}
+.yt-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.yt-play-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.25);
+    opacity: 0;
+    transition: opacity .15s;
+}
+.yt-card:hover .yt-play-icon { opacity: 1; }
+.yt-play-icon svg { width: 44px; height: 44px; fill: #fff; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+.yt-body {
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+.yt-channel-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.yt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #FF0000;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+.yt-channel-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.yt-new-badge {
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--accent);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+.yt-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--text-primary);
+    margin: 0;
+}
+.yt-title a { color: inherit; text-decoration: none; }
+.yt-title a:hover { color: var(--accent); }
+.yt-desc {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin: 0;
+}
+.yt-meta {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
 }
 
 /* ── footer ───────────────────────────────── */
@@ -684,6 +816,6 @@ form.subscribe-form {
     .container { padding: 0 16px; }
     .masthead { flex-direction: column; gap: 8px; }
     .masthead-right { text-align: left; }
-    .digest-grid, .article-grid, .ai-tools-grid { grid-template-columns: 1fr; }
+    .digest-grid, .article-grid, .ai-tools-grid, .yt-grid { grid-template-columns: 1fr; }
     .archive-grid { grid-template-columns: repeat(2, 1fr); }
 }

@@ -379,6 +379,63 @@ NEWSLETTER_CSS = """
     border: 1px solid var(--border);
 }
 
+/* ── insight key point ─────────────────────── */
+.ins-keypoint {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-text);
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 0 0 12px;
+    line-height: 1.6;
+}
+.ins-kp-label {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 8px;
+}
+
+/* ── YouTube cards ─────────────────────────── */
+.yt-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s, transform .15s;
+    margin-bottom: 10px;
+}
+.yt-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.yt-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: var(--bg-elevated); }
+.yt-body { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 5px; }
+.yt-channel-row { display: flex; align-items: center; gap: 7px; }
+.yt-badge {
+    background: #FF0000; color: #fff; font-size: 9px; font-weight: 700;
+    letter-spacing: .5px; padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+}
+.yt-channel-name { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.yt-new-badge {
+    font-size: 9px; font-weight: 700; background: var(--accent);
+    color: #fff; padding: 1px 6px; border-radius: 10px; margin-left: auto;
+}
+.yt-title { font-size: 13.5px; font-weight: 700; line-height: 1.45; color: var(--text-primary); margin: 0; }
+.yt-title a { color: inherit; text-decoration: none; }
+.yt-title a:hover { color: var(--accent); }
+.yt-desc {
+    font-size: 12px; line-height: 1.7; color: var(--text-secondary);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+    overflow: hidden; margin: 0;
+}
+.yt-meta { font-size: 10.5px; color: var(--text-faint); padding-top: 6px; border-top: 1px solid var(--border); }
+
 /* ── divider ───────────────────────────────── */
 .section-divider {
     border: none;
@@ -1019,7 +1076,7 @@ def render_daily_digest(items: List[dict]) -> None:
     for idx, ins in enumerate(insights[:3], 1):
         title = escape(ins.get("title") or "")
         tag = escape(ins.get("tag") or "")
-        # Combine marketing_insight (primary) + strategic_implication (secondary)
+        key_point = escape(ins.get("key_point") or "")
         body_main = ins.get("marketing_insight") or ins.get("body") or ins.get("summary") or ""
         body_supp = ins.get("strategic_implication") or ""
         full_body = escape(body_main)
@@ -1027,6 +1084,10 @@ def render_daily_digest(items: List[dict]) -> None:
             full_body += f'<br><br><span style="color:var(--text-muted);font-size:12.5px;font-style:italic;">{escape(body_supp)}</span>'
 
         tag_html = f'<span class="ins-tag">{tag}</span>' if tag else ""
+        kp_html = (
+            f'<p class="ins-keypoint"><span class="ins-kp-label">핵심 포인트</span>{key_point}</p>'
+            if key_point else ""
+        )
         sources = ins.get("sources") or []
         src_tags = "".join(
             f'<span class="ins-src"><a href="{escape(s.get("link","#"))}" target="_blank" '
@@ -1044,6 +1105,7 @@ def render_daily_digest(items: List[dict]) -> None:
                 {tag_html}
             </div>
             <h3 class="ins-title">{title}</h3>
+            {kp_html}
             <p class="ins-text">{full_body}</p>
             {src_html}
         </div>"""
@@ -1053,6 +1115,58 @@ def render_daily_digest(items: List[dict]) -> None:
         f'<div class="insight-cards">{cards_html}</div>',
         unsafe_allow_html=True,
     )
+    st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+
+
+@st.cache_data(ttl=3600)
+def _get_youtube_videos() -> List[dict]:
+    try:
+        from collect_news import fetch_youtube_ai_news
+        videos = fetch_youtube_ai_news(limit=8, days=14)
+        for v in videos:
+            if hasattr(v.get("published_at"), "isoformat"):
+                v["published_at"] = v["published_at"].isoformat()
+        return videos
+    except Exception:
+        return []
+
+
+def render_youtube_section() -> None:
+    videos = _get_youtube_videos()
+    if not videos:
+        return
+    st.markdown('<p class="section-lbl">AI 크리에이터 영상</p>', unsafe_allow_html=True)
+    for row_start in range(0, len(videos), 3):
+        row_videos = videos[row_start:row_start + 3]
+        cols = st.columns(len(row_videos), gap="medium")
+        for col_idx, v in enumerate(row_videos):
+            title = escape(v.get("title") or "")
+            link = escape(v.get("link") or "#")
+            channel = escape(v.get("source") or "YouTube")
+            desc = escape(v.get("content") or "")
+            thumb = v.get("thumbnail") or ""
+            date_str = escape((v.get("published_str") or "")[:10])
+            new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
+            thumb_html = (
+                f'<a href="{link}" target="_blank">'
+                f'<img class="yt-thumb" src="{escape(thumb)}" alt="{title}" '
+                f'onerror="this.style.display=\'none\'"></a>'
+            ) if thumb else ""
+            with cols[col_idx]:
+                st.markdown(f"""
+                <div class="yt-card">
+                    {thumb_html}
+                    <div class="yt-body">
+                        <div class="yt-channel-row">
+                            <span class="yt-badge">▶ YouTube</span>
+                            <span class="yt-channel-name">{channel}</span>
+                            {new_badge}
+                        </div>
+                        <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
+                        <p class="yt-desc">{desc}</p>
+                        <p class="yt-meta">{date_str}</p>
+                    </div>
+                </div>""", unsafe_allow_html=True)
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 
@@ -1126,6 +1240,7 @@ def render_coming_soon(period: str, description: str) -> None:
 
 def _render_daily_tab(items: List[dict], summary_mode: str, language: str) -> None:
     render_daily_digest(items)
+    render_youtube_section()
 
     query = st.text_input(
         "search", placeholder="키워드로 검색...",

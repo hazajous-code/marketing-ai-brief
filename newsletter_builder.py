@@ -234,6 +234,20 @@ def _fetch_live_ai_tools(limit: int = 8) -> List[dict]:
         return []
 
 
+def _fetch_live_youtube(limit: int = 8) -> List[dict]:
+    """Fetch recent YouTube AI creator videos."""
+    try:
+        from collect_news import fetch_youtube_ai_news
+        videos = fetch_youtube_ai_news(limit=limit, days=14)
+        for v in videos:
+            if isinstance(v.get("published_at"), datetime):
+                v["published_at"] = v["published_at"].isoformat()
+        return videos
+    except Exception as e:
+        logger.warning("Failed to fetch YouTube news: %s", e)
+        return []
+
+
 _HANGUL_RE = re.compile(r"[\u3130-\u318F\uAC00-\uD7A3]")
 
 
@@ -245,86 +259,91 @@ _INSIGHT_TEMPLATES = [
     {
         "tag": "AI & 기술",
         "keywords": ["ai", "llm", "gpt", "claude", "gemini", "model", "anthropic", "openai", "agent", "copilot"],
-        "title": "AI 에이전트 경쟁의 진짜 전장은 마케터의 워크플로우다",
+        "title": "AI 에이전트 경쟁, 마케터에게 '어떤 판단을 자동화할 것인가'를 묻다",
+        "key_point": "에이전트 도입 전에 '사람만이 할 수 있는 판단'을 먼저 명확히 정의해야 합니다.",
         "body": (
-            "OpenAI·Anthropic·Google이 잇따라 에이전트 기능을 내놓으며 '자율 실행' 경쟁이 본격화되고 있습니다. "
-            "마케터 입장에서 의미 있는 변화는 모델 성능 자체보다, 이 에이전트들이 광고 집행·리포트 생성·콘텐츠 초안 작성 등 "
-            "반복 업무를 실제로 대체하기 시작했다는 사실입니다. "
-            "도구 도입보다 앞서야 할 과제는 '어떤 판단은 반드시 사람이 해야 하는가'를 명확히 정의하는 것이며, "
-            "이를 정리하지 않은 팀은 자동화 이후 오히려 품질 관리 부담이 늘어날 수 있습니다."
+            "OpenAI·Anthropic·Google이 잇따라 에이전트 기능을 출시하며 광고 집행·리포트 생성·콘텐츠 초안 작성 등 "
+            "반복 업무의 자동화가 현실화되고 있습니다. "
+            "성과를 낸 팀들의 공통점은 '무엇을 자동화할 것인가'가 아니라 "
+            "'어떤 판단은 반드시 사람이 해야 하는가'를 먼저 정의했다는 것입니다. "
+            "이 기준 없이 에이전트를 도입하면 자동화 이후 품질 관리 비용이 오히려 증가합니다."
         ),
     },
     {
         "tag": "퍼포먼스",
         "keywords": ["automation", "campaign", "ads", "performance", "targeting", "bidding", "roas", "cpa", "자동화", "광고", "입찰"],
-        "title": "자동화 성숙기: 운영 효율이 아닌 신호 품질이 ROAS를 결정한다",
+        "title": "완전 자동화 시대의 ROAS: 캠페인 세팅보다 '신호 품질'이 성과를 결정한다",
+        "key_point": "Meta Advantage+·Google PMax 환경에서 경쟁 우위는 캠페인 구조가 아닌 데이터 파이프라인 품질에서 납니다.",
         "body": (
-            "Meta Advantage+·Google PMax 등 완전 자동화 캠페인이 기본값이 되면서, "
-            "입찰·타겟팅·소재 배분은 이미 알고리즘이 담당하고 있습니다. "
-            "성과 격차가 벌어지는 지점은 '어떤 신호를 모델에 주느냐' — 즉 픽셀 데이터 품질, "
-            "전환 이벤트 설계, 오프라인 전환 매칭 체계입니다. "
-            "지금 점검해야 할 것은 캠페인 세팅이 아니라, 모델에 입력되는 퍼스트파티 데이터의 정합성입니다."
+            "입찰·타겟팅·소재 배분이 알고리즘에 이관된 자동화 성숙기에, "
+            "성과 격차는 모델에 어떤 신호를 제공하는가로 결정됩니다. "
+            "핵심 점검 항목은 픽셀 데이터 품질, 전환 이벤트 계층 설계, 오프라인 전환 매칭 체계입니다. "
+            "이 세 가지 인프라를 고도화한 팀은 같은 예산으로 20~40%의 성과 격차를 만들어냅니다."
         ),
     },
     {
         "tag": "검색 & 콘텐츠",
-        "keywords": ["search", "seo", "geo", "generative", "perplexity", "chatgpt search", "content", "검색", "콘텐츠", "생성형"],
-        "title": "GEO 시대, 클릭률 대신 '인용 가능성'이 콘텐츠 성과 지표가 된다",
+        "keywords": ["search", "seo", "geo", "generative", "perplexity", "chatgpt", "content", "검색", "콘텐츠", "생성형"],
+        "title": "GEO(Generative Engine Optimization): 클릭률에서 '인용 가능성'으로 성과 기준이 이동",
+        "key_point": "AI 검색이 쿼리의 30% 이상을 처리하는 지금, SEO 예산 일부를 GEO 체계 구축에 재배분해야 합니다.",
         "body": (
-            "Perplexity·ChatGPT 검색·Google AI Overviews가 쿼리의 30% 이상을 처리하면서, "
-            "클릭을 유도하는 헤드라인 중심 콘텐츠의 유효성이 구조적으로 낮아지고 있습니다. "
-            "AI가 우선 인용하는 콘텐츠의 공통 속성은 E-E-A-T 신호, 구조화된 답변 형식, "
-            "업계 내 외부 링크 권위입니다. "
-            "SEO 예산의 일부를 '우리 브랜드가 AI 답변에 포함되는가'를 추적·개선하는 GEO 체계로 "
-            "재배분하는 전략을 지금 시작해야 합니다."
+            "Perplexity·ChatGPT 검색·Google AI Overviews가 주요 쿼리의 상당수를 처리하면서 "
+            "클릭 유도형 헤드라인 콘텐츠의 노출 효율이 구조적으로 하락하고 있습니다. "
+            "AI가 우선 인용하는 콘텐츠의 공통 속성은 E-E-A-T 신호, 구조화된 Q&A 포맷, "
+            "업계 내 권위 있는 외부 링크 프로필입니다. "
+            "'우리 브랜드가 AI 답변에 포함되는가'를 추적·개선하는 GEO 모니터링 지표를 지금 설정하세요."
         ),
     },
     {
         "tag": "브랜드 전략",
         "keywords": ["brand", "customer", "experience", "loyalty", "personalization", "crm", "브랜드", "고객", "경험", "충성", "개인화"],
-        "title": "개인화 고도화 역설: 브랜드 일관성이 다시 핵심 자산이 된다",
+        "title": "초개인화의 역설: 알고리즘이 메시지를 무한 생성할수록 브랜드 일관성이 핵심 자산이 된다",
+        "key_point": "AI 출력물 검수 기준을 브랜드 가이드라인으로 재정의하는 '브랜드 거버넌스 레이어' 구축이 시급합니다.",
         "body": (
-            "AI 기반 초개인화가 확산되면서 아이러니하게도 브랜드 정체성의 명확성이 더 중요해지고 있습니다. "
-            "알고리즘이 무한히 개인화된 메시지를 생성할수록, '어떤 브랜드인가'에 대한 일관된 톤과 포지션이 "
-            "실제 구매 결정의 앵커가 됩니다. "
-            "지금 필요한 것은 AI 활용 범위를 넓히는 동시에, 브랜드 가이드라인을 AI 출력물 검수 기준으로 "
-            "재정의하는 '브랜드 거버넌스 레이어' 구축입니다."
+            "AI 기반 초개인화 도구가 보편화되면서, '어떤 브랜드인가'에 대한 명확한 포지션이 "
+            "오히려 더 강력한 차별화 요소가 되고 있습니다. "
+            "알고리즘이 무한히 개인화된 메시지를 생성할수록, 일관된 톤·비주얼·가치관이 "
+            "실제 구매 결정의 신뢰 앵커로 작동합니다. "
+            "지금 해야 할 일은 AI 사용 범위를 늘리는 것이 아니라, "
+            "AI 출력물을 어떤 기준으로 검수할 것인가를 브랜드 가이드라인 수준으로 정의하는 것입니다."
         ),
     },
     {
         "tag": "데이터 & 측정",
         "keywords": ["data", "privacy", "cookie", "measurement", "analytics", "mmm", "attribution", "데이터", "개인정보", "측정", "어트리뷰션"],
-        "title": "포스트 쿠키 측정 공백, MMM 재도입이 아니라 하이브리드 체계가 답이다",
+        "title": "포스트 쿠키 측정 공백: MMM 단독 재도입이 아닌 3단 하이브리드 체계가 정답이다",
+        "key_point": "MMM + 인크리멘탈리티 테스트 + 퍼스트파티 클린룸을 결합한 팀이 내년 예산 협상에서 유리한 고지를 점합니다.",
         "body": (
-            "서드파티 쿠키 종료 이후 라스트클릭 어트리뷰션의 신뢰도가 무너지면서 "
-            "MMM(마케팅 믹스 모델)에 대한 관심이 다시 높아지고 있습니다. "
-            "그러나 MMM 단독으로는 6~8주 지연이 발생해 실시간 최적화가 불가합니다. "
-            "선도 기업들은 MMM(장기 예산 배분) + 인크리멘탈리티 테스트(채널별 증분 효과) + "
-            "퍼스트파티 데이터 클린룸(실시간 시그널)을 결합한 3단 체계로 전환하고 있습니다. "
-            "이 인프라를 먼저 갖춘 팀이 내년 예산 시즌의 협상력에서 우위를 점합니다."
+            "라스트클릭 어트리뷰션의 신뢰도가 무너진 상황에서 MMM만 재도입하면 6~8주 데이터 지연으로 "
+            "실시간 최적화가 불가합니다. "
+            "글로벌 선도 기업들은 ① MMM(장기 예산 배분) ② 인크리멘탈리티 테스트(채널 증분 효과 측정) "
+            "③ 퍼스트파티 데이터 클린룸(실시간 시그널)을 병렬 운영하는 3단 체계로 전환 중입니다. "
+            "이 인프라 구축에는 6~12개월이 필요하므로, 지금 시작하지 않으면 다음 예산 시즌에 뒤처집니다."
         ),
     },
     {
         "tag": "플랫폼 변화",
-        "keywords": ["platform", "meta", "google", "tiktok", "retail media", "amazon", "youtube", "platform", "플랫폼", "미디어"],
-        "title": "리테일 미디어 급성장, D2C 브랜드의 미디어 믹스 재구성이 필요하다",
+        "keywords": ["platform", "meta", "google", "tiktok", "retail", "amazon", "youtube", "플랫폼", "미디어", "리테일"],
+        "title": "리테일 미디어 3.0: 구매 의도 신호 활용이 D2C 브랜드의 차세대 퍼포먼스 채널이 된다",
+        "key_point": "쿠팡·무신사·네이버쇼핑 등 커머스 플랫폼 광고를 단순 노출이 아닌 구매 데이터 연동 관점에서 재설계해야 합니다.",
         "body": (
-            "Amazon Ads·쿠팡 광고·무신사 광고 등 리테일 미디어가 디지털 광고의 3대 축으로 자리잡으면서, "
-            "기존 Meta·Google 중심의 퍼포먼스 미디어 믹스를 재구성해야 할 시점이 왔습니다. "
-            "리테일 미디어의 핵심 강점은 구매 의도가 가장 높은 순간의 노출이지만, "
-            "크리에이티브 포맷·측정 방식·최소 예산 요건이 기존 플랫폼과 완전히 다릅니다. "
-            "전담 운영 역량 없이 예산만 이동하면 기대 ROAS를 달성하기 어렵습니다."
+            "Amazon Ads를 필두로 리테일 미디어 네트워크가 글로벌 디지털 광고의 3대 축으로 성장하면서, "
+            "국내에서도 쿠팡·무신사·네이버쇼핑 광고가 퍼포먼스 마케터의 핵심 채널이 되고 있습니다. "
+            "리테일 미디어의 진짜 강점은 노출량이 아니라 구매 직전 의도 신호와 구매 후 행동 데이터의 연동입니다. "
+            "크리에이티브 포맷·최소 예산·측정 체계가 기존 플랫폼과 완전히 다르므로, "
+            "예산만 이동하고 전담 운영 역량 없이는 기대 ROAS를 달성하기 어렵습니다."
         ),
     },
     {
         "tag": "AI & 기술",
         "keywords": ["tool", "launch", "release", "product", "feature", "microsoft", "apple", "툴", "출시", "기능", "제품"],
-        "title": "AI 툴 홍수 속에서 마케터의 진짜 질문은 '채택 속도'가 아니다",
+        "title": "AI 툴 과잉 시대, '몇 개를 쓰는가'보다 '하나로 무엇을 바꿨는가'가 경쟁력이다",
+        "key_point": "파일럿 → 성과 측정 → 전사 확산의 표준 평가 프레임워크 없이 AI 툴을 도입하면 비용만 늘고 성과는 분산됩니다.",
         "body": (
-            "매주 수십 개의 AI 마케팅 툴이 출시되는 환경에서, 빠른 채택이 곧 경쟁력이라는 인식이 퍼지고 있습니다. "
-            "그러나 실제 성과와 연결된 팀들의 공통점은 도구 수가 아니라 '하나의 툴로 어떤 프로세스를 바꿨는가'의 명확성입니다. "
-            "마케팅 조직에 지금 필요한 것은 AI 툴 레이더 운영보다, "
-            "파일럿 → 성과 측정 → 전사 확산의 표준 평가 프레임워크 수립입니다."
+            "주당 수십 개의 AI 마케팅 툴이 출시되는 환경에서 '빠른 채택 = 경쟁력'이라는 압박이 강해지고 있습니다. "
+            "그러나 성과와 연결된 팀들의 공통점은 도구 수가 아니라 '하나의 툴로 어떤 프로세스를 근본적으로 바꿨는가'의 명확성입니다. "
+            "지금 필요한 것은 AI 툴 레이더 운영이 아니라, "
+            "파일럿(4주) → KPI 측정 → 전사 확산 여부 결정의 표준 평가 프레임워크 수립입니다."
         ),
     },
 ]
@@ -356,6 +375,7 @@ def _fallback_three_insights(articles: List[dict]) -> List[dict]:
         ][:2]
         out.append({
             "title": tmpl["title"],
+            "key_point": tmpl.get("key_point", ""),
             "body": tmpl["body"],
             "tag": tmpl.get("tag", ""),
             "evidence": evid_arts,
@@ -597,16 +617,21 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
 
 
 def _render_insights_html(insights: List[dict]) -> str:
-    """3 marketing insight cards — numbered badge, category tag, body, source chips."""
+    """3 marketing insight cards — badge, tag, title, key_point, body, source chips."""
     if not insights:
         return ""
     cards = ""
     for idx, ins in enumerate(insights[:3], 1):
         title = escape(ins.get("title") or "")
+        key_point = escape(ins.get("key_point") or "")
         body = escape(ins.get("body") or "")
         tag = escape(ins.get("tag") or "")
         evid = ins.get("evidence") or []
         tag_html = f'<span class="ins-tag">{tag}</span>' if tag else ""
+        kp_html = (
+            f'<p class="ins-keypoint"><span class="ins-kp-label">핵심 포인트</span>{key_point}</p>'
+            if key_point else ""
+        )
         src_tags = "".join(
             f'<span class="ins-src">{escape(str(e)[:55])}</span>'
             for e in evid[:3] if e
@@ -622,12 +647,61 @@ def _render_insights_html(insights: List[dict]) -> str:
                 {tag_html}
             </div>
             <h3 class="ins-title">{title}</h3>
+            {kp_html}
             <p class="ins-text">{body}</p>
             {src_html}
         </div>"""
     return f"""
     <p class="section-label">오늘의 마케팅 인사이트</p>
     <div class="insight-cards">{cards}</div>"""
+
+
+def _render_youtube_cards(videos: List[dict]) -> str:
+    """YouTube video cards with thumbnail, channel badge, title, description."""
+    if not videos:
+        return ""
+    cards = ""
+    for v in videos[:8]:
+        title = escape(v.get("title") or "")
+        link = escape(v.get("link") or "#")
+        channel = escape(v.get("source") or "YouTube")
+        desc = escape(v.get("content") or "")
+        thumb = escape(v.get("thumbnail") or "")
+        date_str = escape((v.get("published_str") or "")[:10])
+        new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
+
+        thumb_html = (
+            f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
+            f'onerror="this.parentElement.style.display=\'none\'">'
+            if thumb else ""
+        )
+        play_svg = (
+            '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+            if thumb else ""
+        )
+        thumb_section = f"""
+        <a href="{link}" target="_blank" class="yt-thumb-wrap">
+            {thumb_html}
+            <div class="yt-play-icon">{play_svg}</div>
+        </a>""" if thumb else ""
+
+        cards += f"""
+        <div class="yt-card">
+            {thumb_section}
+            <div class="yt-body">
+                <div class="yt-channel-row">
+                    <span class="yt-badge">▶ YouTube</span>
+                    <span class="yt-channel-name">{channel}</span>
+                    {new_badge}
+                </div>
+                <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
+                <p class="yt-desc">{desc}</p>
+                <p class="yt-meta">{date_str}</p>
+            </div>
+        </div>"""
+    return f"""
+    <p class="section-label">AI 크리에이터 영상</p>
+    <div class="yt-grid">{cards}</div>"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
@@ -744,6 +818,7 @@ def build_daily_page(
     insights: List[dict],
     articles: List[dict],
     ai_tools: List[dict] | None = None,
+    youtube_videos: List[dict] | None = None,
     prev_date: str | None = None,
     next_date: str | None = None,
 ) -> str:
@@ -752,6 +827,7 @@ def build_daily_page(
     nav_left = f'<a href="{prev_date}.html">&larr; {prev_date}</a>' if prev_date else '<span></span>'
     nav_right = f'<a href="{next_date}.html">{next_date} &rarr;</a>' if next_date else '<span></span>'
     tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
+    yt_section = _render_youtube_cards(youtube_videos or [])
 
     body = f"""
     <header class="masthead">
@@ -770,6 +846,7 @@ def build_daily_page(
     {_subscribe_banner_html()}
     {_render_ai_tools_html(ai_tools_ko)}
     {_render_insights_html(insights)}
+    {yt_section}
     {_render_article_cards(articles_ko)}
     <footer class="footer">
         <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
@@ -787,6 +864,7 @@ def build_index_page(
     older_issues: List[dict],
     weekly_reports: List[dict],
     monthly_reports: List[dict],
+    youtube_videos: List[dict] | None = None,
 ) -> str:
     """Build the main index.html — dashboard style with today's content + archive."""
     from zoneinfo import ZoneInfo
@@ -799,6 +877,7 @@ def build_index_page(
 
     ai_tools_html = _render_ai_tools_html(ai_tools_ko)
     insights_html = _render_insights_html(latest_insights)
+    yt_html = _render_youtube_cards(youtube_videos or [])
     articles_html = _render_article_cards(articles_ko, limit=9)
 
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)
@@ -816,6 +895,7 @@ def build_index_page(
     {subscribe_html}
     {ai_tools_html}
     {insights_html}
+    {yt_html}
     {articles_html}
     {tabs_html}
     <footer class="footer">
@@ -967,13 +1047,15 @@ def publish_single_date(date_str: str, dates_list: List[str] | None = None, is_l
     if not ai_tools and is_latest:
         ai_tools = _fetch_live_ai_tools(limit=8)
 
+    youtube_videos = _fetch_live_youtube(limit=8) if is_latest else []
+
     if dates_list is None:
         dates_list = _all_dates()
     idx = dates_list.index(date_str) if date_str in dates_list else -1
     prev_date = dates_list[idx + 1] if idx >= 0 and idx + 1 < len(dates_list) else None
     next_date = dates_list[idx - 1] if idx > 0 else None
 
-    html = build_daily_page(date_str, insights, articles, ai_tools, prev_date, next_date)
+    html = build_daily_page(date_str, insights, articles, ai_tools, youtube_videos, prev_date, next_date)
     _ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     out = _ISSUES_DIR / f"{date_str}.html"
     out.write_text(html, encoding="utf-8")
@@ -1111,6 +1193,9 @@ def publish_index() -> Path:
     if not latest_ai_tools:
         latest_ai_tools = _fetch_live_ai_tools(limit=8)
 
+    # YouTube videos: always fetch live for index page
+    latest_youtube = _fetch_live_youtube(limit=8)
+
     # Recent = last 7 days of issues (as cards), older = the rest (collapsed)
     recent_issues = []
     older_issues = []
@@ -1130,6 +1215,7 @@ def publish_index() -> Path:
     html = build_index_page(
         latest_date, latest_articles, latest_insights, latest_ai_tools,
         recent_issues, older_issues, weekly_reports, monthly_reports,
+        youtube_videos=latest_youtube,
     )
     _DOCS_DIR.mkdir(parents=True, exist_ok=True)
     out = _DOCS_DIR / "index.html"
