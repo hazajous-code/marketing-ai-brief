@@ -12,7 +12,7 @@ import requests
 import streamlit as st
 
 from collect_news import DEFAULT_FEEDS, fetch_ai_tools_news, fetch_rss_news
-from newsletter_builder import _ai_tools_glance_html, _render_tool_directory_table
+from newsletter_builder import _ai_tools_glance_html, _hero_snapshot_kst, _render_dashboard_hero
 from mailer import add_subscriber, get_active_emails, is_configured, load_subscribers, send_daily_brief
 from scheduler import get_next_fire_time, start_scheduler, trigger_now
 from summarize import summarize_text
@@ -522,6 +522,41 @@ p.section-label {
     color: var(--accent-text, #7C3AED);
     letter-spacing: 2px;
 }
+.hero-dash { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+.dash-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+.dash-card--kr { border-top: 3px solid #2563eb; }
+.dash-card--tools { border-top: 3px solid #7C3AED; }
+.dash-summary { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px; padding: 14px 16px 12px; cursor: pointer; list-style: none; }
+.dash-summary::-webkit-details-marker { display: none; }
+.dash-summary::marker { content: ""; }
+.dash-summary-left { flex: 1; min-width: 0; }
+.dash-summary-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.dash-eyebrow { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.dash-title { display: block; font-size: 15px; font-weight: 700; color: var(--text-primary); line-height: 1.3; margin-bottom: 3px; }
+.dash-sub { display: block; font-size: 11px; color: var(--text-faint); line-height: 1.45; }
+.dash-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.dash-meta--accent { font-weight: 700; color: #7C3AED; }
+.dash-chevron { font-size: 10px; color: var(--text-faint); display: inline-block; transition: transform .18s ease; }
+.dash-card[open] .dash-chevron { transform: rotate(0deg); }
+.dash-card:not([open]) .dash-chevron { transform: rotate(-90deg); }
+.dash-chevron::before { content: "▼"; }
+.dash-body { padding: 0 16px 14px; border-top: 1px solid var(--border); }
+.dash-body--tight { padding: 10px 12px 12px; }
+.dash-body--tight .tool-dir-wrap.tool-dir-hero { margin-bottom: 0; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: none; }
+.kr-radar-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.kr-radar-table th { text-align: left; font-size: 10px; font-weight: 600; color: var(--text-muted); padding: 8px 8px 6px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .5px; }
+.kr-radar-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.kr-radar-table tr:last-child td { border-bottom: none; }
+.kr-radar-src { width: 22%; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.kr-radar-title a { color: var(--text-primary); text-decoration: none; font-weight: 500; }
+.kr-radar-title a:hover { color: #7C3AED; text-decoration: underline; }
+.kr-radar-date { width: 52px; text-align: right; font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+.kr-radar-empty { font-size: 12.5px; color: var(--text-muted); margin: 10px 0 4px; line-height: 1.55; }
+@media (max-width: 640px) {
+    .dash-summary { flex-direction: column; }
+    .dash-summary-right { width: 100%; justify-content: flex-end; }
+    .kr-radar-src { white-space: normal; }
+}
 .tool-dir-hero {
     margin-bottom: 22px;
     padding: 10px 12px 12px;
@@ -981,6 +1016,13 @@ def load_news(feed_urls: tuple[str, ...], limit: int) -> List[dict]:
 @st.cache_data(ttl=1800, show_spinner=False)
 def load_ai_tools(limit: int = 10) -> List[dict]:
     return fetch_ai_tools_news(limit=limit)
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def load_kr_ai_radar() -> List[dict]:
+    from collect_news import fetch_kr_ai_radar_updates
+
+    return fetch_kr_ai_radar_updates(12)
 
 
 def _get_summary(aid: str, mode: str) -> str:
@@ -1901,7 +1943,10 @@ def main() -> None:
     _accumulate_articles(items)
 
     render_masthead(article_count=len(items))
-    st.markdown(_render_tool_directory_table(), unsafe_allow_html=True)
+    st.markdown(
+        _render_dashboard_hero(load_kr_ai_radar(), _hero_snapshot_kst()),
+        unsafe_allow_html=True,
+    )
 
     with st.spinner("AI 툴 소식 수집 중..."):
         ai_tools = load_ai_tools(limit=6)

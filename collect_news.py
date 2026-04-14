@@ -421,6 +421,9 @@ _DOMAIN_NICE_NAMES: Dict[str, str] = {
     "blog.google": "Google AI Blog",
     "ai.meta.com": "Meta AI",
     "digitaltoday.co.kr": "Digital Today",
+    "platum.kr": "Platum",
+    "www.aitimes.com": "AI타임스",
+    "aitimes.com": "AI타임스",
 }
 
 
@@ -590,6 +593,101 @@ def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 60) -> List[Dict[str
         item.pop("_tier", None)
         item.pop("_feed_url", None)
     return result
+
+
+# ── Korea AI radar (curated domestic RSS + light keyword gate) ───────
+KR_AI_RADAR_FEEDS: Tuple[str, ...] = (
+    *KO_SOURCE_FEEDS,
+    "https://www.aitimes.com/rss/allArticle.xml",
+)
+
+_KR_AI_RADAR_PAT = re.compile(
+    r"인공지능|생성형|생성\s*형|\bAI\b|에이아이|ChatGPT|챗지피티|GPT|"
+    r"LLM|거대\s*언어|언어\s*모델|딥러닝|추론|파운데이션|파인튜닝|"
+    r"클로바|CLOVA|하이퍼클로바|HyperCLOVA|"
+    r"오픈\s*AI|OpenAI|Anthropic|클로드|Llama|라마|Mistral|미스트랄|"
+    r"AI마케|마케팅AI|마케팅\s*AI|애드테크|"
+    r"네이버|카카오|LG|삼성|SK텔레콤|SKT|"
+    r"GPU|NPU|반도체|LLMOps|에이전트|Agent",
+    re.I,
+)
+
+
+def _kr_ai_radar_match(blob: str) -> bool:
+    if not blob or not blob.strip():
+        return False
+    if _KR_AI_RADAR_PAT.search(blob):
+        return True
+    low = blob.lower()
+    return any(
+        s in low
+        for s in (
+            " generative ",
+            " artificial intelligence",
+            "foundation model",
+            "large language",
+            "machine learning",
+            "neural ",
+            "openai",
+        )
+    )
+
+
+def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[Dict[str, Any]]:
+    """Headlines from Korean tech/biz RSS, filtered for AI-related topics (build-time snapshot)."""
+    if limit <= 0:
+        return []
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max_age_days)
+    collected: List[Dict[str, Any]] = []
+    seen: set = set()
+
+    valid_urls = [u for u in KR_AI_RADAR_FEEDS if u and isinstance(u, str)]
+    url_entries: List[tuple[str, List[Any]]] = []
+    with ThreadPoolExecutor(max_workers=min(_MAX_WORKERS, len(valid_urls) or 1)) as pool:
+        future_to_url = {pool.submit(_fetch_entries, u): u for u in valid_urls}
+        for future in as_completed(future_to_url):
+            url_entries.append((future_to_url[future], future.result()))
+
+    for url, entries in url_entries:
+        for entry in entries:
+            try:
+                title = _strip_html(entry.get("title", "Untitled"))
+                link = (entry.get("link") or "").strip()
+                pub = _parse_date(entry)
+                if pub < cutoff:
+                    continue
+                blob = f"{title} {_strip_html(entry.get('summary') or entry.get('description') or '')}"
+                if not _kr_ai_radar_match(blob):
+                    continue
+                key = _normalize_link(link) or _normalize_title(title)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                content = _strip_html(entry.get("summary") or entry.get("description") or "")
+                source = (entry.get("source", {}) or {}).get("title") if isinstance(entry.get("source"), dict) else None
+                if not source:
+                    source = _domain_label(link) or _domain_label(url) or "Feed"
+
+                korean = _is_korean(title + content)
+                collected.append({
+                    "id": _normalize_link(link) or f"{_normalize_title(title)}-{pub.isoformat()}",
+                    "title": title,
+                    "link": link,
+                    "source": source,
+                    "published_at": pub,
+                    "published_str": pub.strftime("%Y-%m-%d %H:%M UTC"),
+                    "content": content[:400],
+                    "is_new": now - pub <= timedelta(hours=36),
+                    "lang": "ko" if korean else "en",
+                })
+            except Exception:
+                continue
+
+    collected.sort(key=lambda x: -x["published_at"].timestamp())
+    return collected[:limit]
 
 
 # ── AI Tool news collector ──────────────────────────────────────────

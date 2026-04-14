@@ -590,8 +590,24 @@ def _tool_dir_tbody_for_cats(by_cat: Dict[str, list], cat_keys: List[str]) -> st
     return rows
 
 
-def _render_tool_directory_table() -> str:
-    """Render a compact two-column table of well-known AI tools by category."""
+def _hero_snapshot_kst() -> str:
+    from zoneinfo import ZoneInfo
+
+    return datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d %H:%M")
+
+
+def _kr_radar_items_for_page() -> List[dict]:
+    try:
+        from collect_news import fetch_kr_ai_radar_updates
+
+        return fetch_kr_ai_radar_updates(12)
+    except Exception as e:
+        logger.warning("KR AI radar fetch failed: %s", e)
+        return []
+
+
+def _render_tool_directory_inner_html() -> str:
+    """Two-column tool directory tables only (wrapped for hero panel)."""
     by_cat: Dict[str, list] = {}
     for t in _AI_TOOL_DIRECTORY:
         by_cat.setdefault(t["cat"], []).append(t)
@@ -615,7 +631,6 @@ def _render_tool_directory_table() -> str:
 
     if not col_b.strip():
         return f"""
-    <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
     <div class="tool-dir-wrap tool-dir-hero tool-dir-hero--grid">
         <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록">
             {thead}
@@ -624,7 +639,6 @@ def _render_tool_directory_table() -> str:
     </div>"""
 
     return f"""
-    <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
     <div class="tool-dir-wrap tool-dir-hero tool-dir-hero--grid">
         <div class="tool-dir-cols" role="presentation">
             <div class="tool-dir-col">
@@ -641,6 +655,84 @@ def _render_tool_directory_table() -> str:
             </div>
         </div>
     </div>"""
+
+
+def _render_kr_radar_rows_html(items: List[dict]) -> str:
+    if not items:
+        return (
+            '<p class="kr-radar-empty">지금은 표시할 국내 AI 헤드라인이 없습니다. '
+            "RSS 연결을 확인하거나 잠시 후 다시 시도해 주세요.</p>"
+        )
+    from zoneinfo import ZoneInfo
+
+    rows: List[str] = []
+    for it in items[:12]:
+        title = escape((it.get("title") or "")[:180])
+        link = escape((it.get("link") or "#").strip())
+        src = escape((it.get("source") or "")[:36])
+        pub = it.get("published_at")
+        if hasattr(pub, "astimezone"):
+            d = pub.astimezone(ZoneInfo("Asia/Seoul")).strftime("%m/%d")
+        else:
+            d = escape((it.get("published_str") or "")[:10])
+        rows.append(
+            f'<tr><td class="kr-radar-src">{src}</td>'
+            f'<td class="kr-radar-title"><a href="{link}" target="_blank" rel="noopener noreferrer">{title}</a></td>'
+            f'<td class="kr-radar-date">{d}</td></tr>'
+        )
+    return (
+        '<table class="kr-radar-table"><thead><tr>'
+        '<th scope="col">출처</th><th scope="col">헤드라인</th><th scope="col">일자</th>'
+        f'</tr></thead><tbody>{"".join(rows)}</tbody></table>'
+    )
+
+
+def _render_dashboard_hero(kr_items: List[dict], snapshot_kst: str) -> str:
+    """Korea AI radar + collapsible marketing tool directory (same snapshot time for both)."""
+    n = len(kr_items)
+    inner_tools = _render_tool_directory_inner_html()
+    kr_body = _render_kr_radar_rows_html(kr_items)
+    return f"""
+    <div class="hero-dash">
+        <details class="dash-card dash-card--kr" open>
+            <summary class="dash-summary">
+                <span class="dash-summary-left">
+                    <span class="dash-eyebrow">국내 피드</span>
+                    <span class="dash-title">한국 AI 업데이트 체크</span>
+                    <span class="dash-sub">Platum · Kakao Tech · Naver D2 · Digital Today · AI타임스</span>
+                </span>
+                <span class="dash-summary-right">
+                    <span class="dash-meta">수집 시각 {escape(snapshot_kst)} KST</span>
+                    <span class="dash-meta dash-meta--accent">{n}건</span>
+                    <span class="dash-chevron" aria-hidden="true"></span>
+                </span>
+            </summary>
+            <div class="dash-body">
+                {kr_body}
+            </div>
+        </details>
+        <details class="dash-card dash-card--tools" open>
+            <summary class="dash-summary">
+                <span class="dash-summary-left">
+                    <span class="dash-eyebrow">레퍼런스</span>
+                    <span class="dash-title">마케팅·크리에이티브 AI 툴 한눈에</span>
+                    <span class="dash-sub">대표 SaaS · 생성형 툴 카탈로그</span>
+                </span>
+                <span class="dash-summary-right">
+                    <span class="dash-meta">목록 기준 {escape(snapshot_kst)} KST</span>
+                    <span class="dash-chevron" aria-hidden="true"></span>
+                </span>
+            </summary>
+            <div class="dash-body dash-body--tight">
+                {inner_tools}
+            </div>
+        </details>
+    </div>"""
+
+
+def _render_tool_directory_table() -> str:
+    """KR radar + tool directory hero (fetch at call site for Streamlit caching if needed)."""
+    return _render_dashboard_hero(_kr_radar_items_for_page(), _hero_snapshot_kst())
 
 
 _TOOL_TRANS_CACHE = _PROJECT_ROOT / "data" / "ai_tools_translation_cache.json"
