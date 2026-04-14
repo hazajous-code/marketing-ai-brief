@@ -12,6 +12,7 @@ import requests
 import streamlit as st
 
 from collect_news import DEFAULT_FEEDS, fetch_ai_tools_news, fetch_rss_news
+from newsletter_builder import _render_tool_directory_table, _render_youtube_section
 from mailer import add_subscriber, get_active_emails, is_configured, load_subscribers, send_daily_brief
 from scheduler import get_next_fire_time, start_scheduler, trigger_now
 from summarize import summarize_text
@@ -507,6 +508,77 @@ NEWSLETTER_CSS = """
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
 }
+p.section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.section-label.section-label-hero {
+    color: var(--accent-text, #7C3AED);
+    letter-spacing: 2px;
+}
+.tool-dir-hero {
+    margin-bottom: 22px;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elevated);
+}
+.tool-dir-wrap { overflow-x: auto; }
+.tool-dir-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+.tool-dir-table thead th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--border);
+}
+.dir-cat-row td {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-text, #7C3AED);
+    padding: 10px 8px 4px;
+}
+.tool-dir-table tbody tr:not(.dir-cat-row) { border-bottom: 1px solid var(--border); }
+.dir-icon { width: 28px; text-align: center; font-size: 15px; padding: 5px 4px; }
+.dir-name { padding: 5px 8px; font-weight: 600; }
+.dir-name a { color: var(--text-primary); }
+.dir-maker { display: block; font-size: 9px; color: var(--text-faint); font-weight: 400; }
+.dir-desc { padding: 5px 8px; color: var(--text-muted); font-size: 11.5px; }
+
+.yt-section-compact {
+    padding: 12px 14px 14px !important;
+    margin-bottom: 20px !important;
+}
+.yt-micro-line { font-size: 12px; color: var(--text-secondary); margin: 0 0 6px; }
+.yt-micro-line strong { color: var(--text-primary); }
+.yt-micro-meta { font-weight: 600; color: var(--text-muted); margin-left: 6px; }
+.yt-compact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+}
+.yt-compact-list { display: flex; flex-direction: column; gap: 5px; }
+.yt-compact-item {
+    display: flex; align-items: center; gap: 8px;
+    text-decoration: none; padding: 5px 6px; border-radius: var(--radius-sm);
+}
+.yt-compact-item:hover { background: var(--bg-card); }
+.yt-compact-thumb { width: 56px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.yt-compact-title { font-size: 11.5px; font-weight: 600; color: var(--text-primary); display: block; line-height: 1.35; }
+.yt-compact-channel { font-size: 10px; color: var(--text-faint); }
+.ai-tools-news-grid .ai-tool-desc { -webkit-line-clamp: 3; }
 
 /* ── article cards ─────────────────────────── */
 .a-card {
@@ -1054,12 +1126,13 @@ def _get_ai_tools_translations(tools: List[dict]) -> dict:
 
 
 def render_ai_tools_section(tools: List[dict]) -> None:
-    """Render New AI Tools ticker — always translated to Korean."""
+    """Render AI tool news — always translated to Korean."""
     if not tools:
         return
+    st.markdown('<p class="section-lbl">AI 툴 뉴스 모음</p>', unsafe_allow_html=True)
     st.markdown(
         """<div class="ai-tools-header">
-            <p class="ai-tools-label">신규 AI 툴 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></p>
+            <p class="ai-tools-label">RSS 수집 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></p>
             <div class="ai-tools-line"></div>
         </div>""",
         unsafe_allow_html=True,
@@ -1172,7 +1245,7 @@ def render_daily_digest(items: List[dict]) -> None:
 def _get_youtube_videos() -> List[dict]:
     try:
         from collect_news import fetch_youtube_ai_news
-        videos = fetch_youtube_ai_news(limit=16, days=14)
+        videos = fetch_youtube_ai_news(limit=12, days=14)
         for v in videos:
             if hasattr(v.get("published_at"), "isoformat"):
                 v["published_at"] = v["published_at"].isoformat()
@@ -1181,125 +1254,12 @@ def _get_youtube_videos() -> List[dict]:
         return []
 
 
-def _yt_card_html_app(v: dict) -> str:
-    """Single YouTube card as HTML string."""
-    title = escape(v.get("title") or "")
-    link = escape(v.get("link") or "#")
-    channel = escape(v.get("source") or "YouTube")
-    desc = escape(v.get("content") or "")
-    thumb = escape(v.get("thumbnail") or "")
-    date_str = escape((v.get("published_str") or "")[:10])
-    new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
-    region = v.get("region", "global")
-    region_badge = (
-        '<span class="yt-region-badge yt-region-kr">KR</span>'
-        if region == "kr"
-        else '<span class="yt-region-badge yt-region-gl">EN</span>'
-    )
-    thumb_section = ""
-    if thumb:
-        thumb_section = (
-            f'<a href="{link}" target="_blank" class="yt-thumb-wrap">'
-            f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
-            f'onerror="this.parentElement.style.display=\'none\'">'
-            f'<div class="yt-play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>'
-            f'</a>'
-        )
-    return f"""
-    <div class="yt-card">
-        {thumb_section}
-        <div class="yt-body">
-            <div class="yt-channel-row">
-                <span class="yt-badge">▶ YouTube</span>
-                {region_badge}
-                <span class="yt-channel-name">{channel}</span>
-                {new_badge}
-            </div>
-            <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
-            <p class="yt-desc">{desc}</p>
-            <p class="yt-meta">{date_str}</p>
-        </div>
-    </div>"""
-
-
 def render_youtube_section() -> None:
-    """Render the full YouTube section as a single HTML block."""
+    """Compact YouTube block (same HTML as GitHub Pages)."""
     videos = _get_youtube_videos()
     if not videos:
         return
-
-    global_vids = [v for v in videos if v.get("region") != "kr"][:8]
-    kr_vids     = [v for v in videos if v.get("region") == "kr"][:8]
-
-    # ── summary card ────────────────────────────────────
-    all_text = " ".join(
-        (v.get("title") or "") + " " + (v.get("content") or "") for v in videos
-    ).lower()
-    kw_map = {
-        "AI 에이전트·자율실행": ["agent", "agentic", "autonomous", "에이전트"],
-        "LLM 신규 모델 출시":  ["gpt", "claude", "gemini", "llama", "모델", "model"],
-        "AI 도구 & 생산성":    ["tool", "productivity", "copilot", "도구", "생산성"],
-        "AI 코딩 & 개발":      ["coding", "cursor", "vscode", "코딩", "개발"],
-        "AI 비즈니스 트렌드":  ["startup", "funding", "market", "비즈니스", "스타트업"],
-    }
-    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
-    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
-    gl_cnt, kr_cnt = len(global_vids), len(kr_vids)
-    desc_text = (
-        f"해외 크리에이터 {gl_cnt}편, 국내 크리에이터 {kr_cnt}편 수집 완료. "
-        "AI 커뮤니티에서 주목받는 주제를 선별했습니다."
-    )
-    bullets = ""
-    for v in (global_vids + kr_vids)[:6]:
-        flag = "🇰🇷" if v.get("region") == "kr" else "🌎"
-        bullets += (
-            f'<li><strong>{flag} {escape(v.get("source",""))}</strong>'
-            f' — {escape(v.get("title",""))}</li>\n'
-        )
-
-    summary_html = f"""
-    <div class="yt-summary-card">
-        <div class="yt-summary-left">
-            <div class="yt-summary-header">
-                <span class="yt-summary-icon">📺</span>
-                <div>
-                    <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
-                    <p class="yt-summary-topics">{topics_text}</p>
-                </div>
-            </div>
-            <p class="yt-summary-desc">{desc_text}</p>
-        </div>
-        <div class="yt-summary-right">
-            <ul class="yt-summary-list">{bullets}</ul>
-        </div>
-    </div>"""
-
-    # ── video grids ──────────────────────────────────────
-    global_grid = ""
-    if global_vids:
-        cards = "".join(_yt_card_html_app(v) for v in global_vids)
-        global_grid = f"""
-        <div class="yt-sub-section">
-            <p class="yt-sub-label">🌎 해외 크리에이터</p>
-            <div class="yt-grid">{cards}</div>
-        </div>"""
-
-    kr_grid = ""
-    if kr_vids:
-        cards = "".join(_yt_card_html_app(v) for v in kr_vids)
-        kr_grid = f"""
-        <div class="yt-sub-section">
-            <p class="yt-sub-label">🇰🇷 국내 크리에이터</p>
-            <div class="yt-grid">{cards}</div>
-        </div>"""
-
-    st.markdown('<p class="section-lbl">AI 크리에이터 영상</p>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="yt-section">
-        {summary_html}
-        {global_grid}
-        {kr_grid}
-    </div>""", unsafe_allow_html=True)
+    st.markdown(_render_youtube_section(videos), unsafe_allow_html=True)
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 
@@ -1873,7 +1833,7 @@ def main() -> None:
     _accumulate_articles(items)
 
     render_masthead(article_count=len(items))
-    render_subscribe_bar()
+    st.markdown(_render_tool_directory_table(), unsafe_allow_html=True)
 
     with st.spinner("AI 툴 소식 수집 중..."):
         ai_tools = load_ai_tools(limit=6)
@@ -1890,6 +1850,7 @@ def main() -> None:
     with tab_monthly:
         _render_monthly_tab()
 
+    render_subscribe_bar()
     st.markdown(
         '<div class="nl-footer"><p>Marketing AI Brief · Powered by Ollama + Streamlit</p></div>',
         unsafe_allow_html=True,

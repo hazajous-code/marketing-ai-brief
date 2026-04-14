@@ -553,76 +553,68 @@ def _merge_tools_to_db(tools: List[dict]) -> Dict[str, dict]:
     return db
 
 
-def _render_ai_tools_by_category(ai_tools: List[dict], tool_db: Dict[str, dict]) -> str:
-    """Render AI tools grouped by category — all on one page."""
-    if not ai_tools and not tool_db:
-        return ""
+_AI_TOOL_DIRECTORY: List[Dict[str, str]] = [
+    {"cat": "coding",       "icon": "💻", "name": "GitHub Copilot",    "maker": "GitHub/Microsoft", "desc": "코드 자동완성 · AI 페어 프로그래밍", "url": "https://github.com/features/copilot"},
+    {"cat": "coding",       "icon": "💻", "name": "Cursor",            "maker": "Anysphere",        "desc": "AI-네이티브 코드 에디터 (VS Code 기반)", "url": "https://cursor.com"},
+    {"cat": "coding",       "icon": "💻", "name": "Replit AI",         "maker": "Replit",           "desc": "브라우저 기반 AI 코딩 환경", "url": "https://replit.com"},
+    {"cat": "coding",       "icon": "💻", "name": "Codex CLI",         "maker": "OpenAI",           "desc": "터미널에서 자연어로 코딩", "url": "https://openai.com/index/codex/"},
+    {"cat": "writing",      "icon": "✍️", "name": "ChatGPT",           "maker": "OpenAI",           "desc": "범용 AI 어시스턴트 · 글쓰기/분석/코딩", "url": "https://chat.openai.com"},
+    {"cat": "writing",      "icon": "✍️", "name": "Claude",            "maker": "Anthropic",        "desc": "장문 분석 · 안전한 AI 어시스턴트", "url": "https://claude.ai"},
+    {"cat": "writing",      "icon": "✍️", "name": "Jasper",            "maker": "Jasper AI",        "desc": "마케팅 카피 · 브랜드 콘텐츠 생성", "url": "https://jasper.ai"},
+    {"cat": "writing",      "icon": "✍️", "name": "Notion AI",         "maker": "Notion",           "desc": "문서 요약 · 작성 · 브레인스토밍", "url": "https://notion.so/product/ai"},
+    {"cat": "writing",      "icon": "✍️", "name": "Gemini",            "maker": "Google",           "desc": "멀티모달 AI · 검색 연동 어시스턴트", "url": "https://gemini.google.com"},
+    {"cat": "image",        "icon": "🎨", "name": "Midjourney",        "maker": "Midjourney",       "desc": "고품질 AI 이미지 생성", "url": "https://midjourney.com"},
+    {"cat": "image",        "icon": "🎨", "name": "DALL·E 3",          "maker": "OpenAI",           "desc": "텍스트→이미지 생성 (ChatGPT 내장)", "url": "https://openai.com/dall-e-3"},
+    {"cat": "image",        "icon": "🎨", "name": "Adobe Firefly",     "maker": "Adobe",            "desc": "상업용 안전 AI 이미지 · 포토샵 통합", "url": "https://firefly.adobe.com"},
+    {"cat": "image",        "icon": "🎨", "name": "Canva AI",          "maker": "Canva",            "desc": "디자인 자동화 · 마케팅 에셋 생성", "url": "https://canva.com"},
+    {"cat": "image",        "icon": "🎨", "name": "Stable Diffusion",  "maker": "Stability AI",     "desc": "오픈소스 이미지 생성 모델", "url": "https://stability.ai"},
+    {"cat": "video",        "icon": "🎬", "name": "Sora",              "maker": "OpenAI",           "desc": "텍스트→비디오 생성", "url": "https://openai.com/sora"},
+    {"cat": "video",        "icon": "🎬", "name": "Runway Gen-3",      "maker": "Runway",           "desc": "AI 영상 생성 · 편집 스튜디오", "url": "https://runway.ml"},
+    {"cat": "video",        "icon": "🎬", "name": "Pika",              "maker": "Pika Labs",        "desc": "텍스트/이미지→영상 변환", "url": "https://pika.art"},
+    {"cat": "video",        "icon": "🎬", "name": "Kling AI",          "maker": "Kuaishou",         "desc": "고해상도 AI 영상 생성", "url": "https://kling.kuaishou.com"},
+    {"cat": "music",        "icon": "🎵", "name": "Suno",              "maker": "Suno AI",          "desc": "텍스트→음악 생성 (보컬 포함)", "url": "https://suno.com"},
+    {"cat": "music",        "icon": "🎵", "name": "Udio",              "maker": "Udio",             "desc": "AI 작곡 · 다양한 장르 지원", "url": "https://udio.com"},
+    {"cat": "music",        "icon": "🎵", "name": "ElevenLabs",        "maker": "ElevenLabs",       "desc": "AI 음성 합성 · 더빙 · TTS", "url": "https://elevenlabs.io"},
+    {"cat": "marketing",    "icon": "📈", "name": "HubSpot AI",        "maker": "HubSpot",          "desc": "CRM · 이메일 · 콘텐츠 마케팅 자동화", "url": "https://hubspot.com"},
+    {"cat": "marketing",    "icon": "📈", "name": "Semrush AI",        "maker": "Semrush",          "desc": "SEO · 키워드 · 경쟁분석 AI", "url": "https://semrush.com"},
+    {"cat": "marketing",    "icon": "📈", "name": "Copy.ai",           "maker": "Copy.ai",          "desc": "마케팅 카피 · 세일즈 이메일 자동 생성", "url": "https://copy.ai"},
+    {"cat": "productivity", "icon": "⚡", "name": "Perplexity",        "maker": "Perplexity AI",    "desc": "AI 검색 엔진 · 출처 기반 답변", "url": "https://perplexity.ai"},
+    {"cat": "productivity", "icon": "⚡", "name": "Zapier AI",         "maker": "Zapier",           "desc": "앱 간 자동화 워크플로 구축", "url": "https://zapier.com"},
+    {"cat": "productivity", "icon": "⚡", "name": "Gamma",             "maker": "Gamma",            "desc": "AI 프레젠테이션 · 문서 자동 생성", "url": "https://gamma.app"},
+    {"cat": "research",     "icon": "🔬", "name": "Elicit",            "maker": "Elicit",           "desc": "논문 검색 · 요약 · 연구 보조", "url": "https://elicit.com"},
+    {"cat": "research",     "icon": "🔬", "name": "Consensus",         "maker": "Consensus",        "desc": "학술 논문 AI 검색 · 근거 기반 답변", "url": "https://consensus.app"},
+    {"cat": "research",     "icon": "🔬", "name": "NotebookLM",        "maker": "Google",           "desc": "문서 기반 AI 연구 노트 · 팟캐스트 생성", "url": "https://notebooklm.google.com"},
+]
 
-    for t in ai_tools:
-        tool_id = t.get("id") or t.get("link", "")
-        if tool_id and tool_id not in tool_db:
-            cat = _classify_tool_category(
-                t.get("title_ko") or t.get("title", ""),
-                t.get("summary_ko") or t.get("content", ""),
-            )
-            tool_db[tool_id] = {
-                "title": t.get("title_ko") or t.get("title", ""),
-                "link": t.get("link", ""),
-                "desc": (t.get("summary_ko") or t.get("content", ""))[:400],
-                "source": t.get("source", ""),
-                "category": cat,
-                "published_at": t.get("published_at", ""),
-                "is_new": t.get("is_new", False),
-            }
 
-    by_cat: Dict[str, List[dict]] = {}
-    for tool_id, tool in tool_db.items():
-        cat = tool.get("category", "productivity")
-        by_cat.setdefault(cat, []).append(tool)
+def _render_tool_directory_table() -> str:
+    """Render a compact table of well-known AI tools by category."""
+    by_cat: Dict[str, list] = {}
+    for t in _AI_TOOL_DIRECTORY:
+        by_cat.setdefault(t["cat"], []).append(t)
 
-    for cat in by_cat:
-        by_cat[cat].sort(key=lambda x: x.get("published_at", ""), reverse=True)
-
-    new_tool_ids = {(t.get("id") or t.get("link", "")) for t in ai_tools}
-
-    sections = ""
-    ordered_cats = [c for c in _TOOL_CATEGORIES if c in by_cat]
-    for leftover in by_cat:
-        if leftover not in ordered_cats:
-            ordered_cats.append(leftover)
-
-    total_tools = sum(len(v) for v in by_cat.values())
-
-    for cat in ordered_cats:
-        tools_in_cat = by_cat[cat]
-        info = _TOOL_CATEGORIES.get(cat, {"label": cat, "icon": "🔧"})
-        cards = ""
-        for tool in tools_in_cat:
-            title = escape(tool.get("title", ""))
-            link = escape(tool.get("link", "#"))
-            desc = escape(tool.get("desc", ""))
-            source = escape(tool.get("source", ""))
-            tool_id = tool.get("link", "")
-            is_new = tool_id in new_tool_ids or tool.get("is_new", False)
-            new_badge = '<span class="badge badge-new">NEW</span>' if is_new else ""
-            cards += f"""
-            <div class="ai-tool-card">
-                <p class="ai-tool-title"><a href="{link}" target="_blank">{title}</a></p>
-                <p class="ai-tool-desc">{desc}</p>
-                <div class="ai-tool-meta"><span class="badge badge-tool">{escape(info['icon'])} {escape(info['label'])}</span>{new_badge}<span>{source}</span></div>
-            </div>"""
-        sections += f"""
-        <div class="tool-category-section">
-            <h3 class="tool-cat-header">{info['icon']} {escape(info['label'])} <span class="tool-cat-count">{len(tools_in_cat)}</span></h3>
-            <div class="ai-tools-grid">{cards}</div>
-        </div>"""
+    rows = ""
+    for cat_key in _TOOL_CATEGORIES:
+        tools = by_cat.get(cat_key, [])
+        if not tools:
+            continue
+        info = _TOOL_CATEGORIES[cat_key]
+        rows += f'<tr class="dir-cat-row"><td colspan="3">{info["icon"]} {escape(info["label"])}</td></tr>'
+        for t in tools:
+            rows += f"""<tr>
+                <td class="dir-icon">{t['icon']}</td>
+                <td class="dir-name"><a href="{escape(t['url'])}" target="_blank">{escape(t['name'])}</a><span class="dir-maker">{escape(t['maker'])}</span></td>
+                <td class="dir-desc">{escape(t['desc'])}</td>
+            </tr>"""
 
     return f"""
-    <div class="ai-tools-header">
-        <span class="ai-tools-label">AI 툴 디렉토리 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">총 {total_tools}개</span></span>
-        <div class="ai-tools-line"></div>
-    </div>
-    <div class="tool-directory">{sections}</div>"""
+    <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
+    <div class="tool-dir-wrap tool-dir-hero">
+        <table class="tool-dir-table">
+            <thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>
+            <tbody>{rows}</tbody>
+        </table>
+    </div>"""
 
 
 _TOOL_TRANS_CACHE = _PROJECT_ROOT / "data" / "ai_tools_translation_cache.json"
@@ -806,6 +798,7 @@ def _fallback_period_report(items: List[dict], period: str) -> dict:
 # ── HTML fragment builders ───────────────────────────────────────────
 
 def _render_ai_tools_html(ai_tools: List[dict]) -> str:
+    """Render AI tool news cards with category tags."""
     if not ai_tools:
         return ""
     cards = ""
@@ -815,15 +808,22 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
         desc = escape(t.get("summary_ko") or (t.get("content") or "")[:520])
         source = escape(t.get("source", ""))
         new_badge = '<span class="badge badge-new">신규</span>' if t.get("is_new") else ""
+        cat = _classify_tool_category(
+            t.get("title_ko") or t.get("title", ""),
+            t.get("summary_ko") or t.get("content", ""),
+        )
+        cat_info = _TOOL_CATEGORIES.get(cat, {"icon": "🔧", "label": "AI 도구"})
+        cat_badge = f'<span class="badge badge-tool">{cat_info["icon"]} {escape(cat_info["label"])}</span>'
         cards += f"""
         <div class="ai-tool-card">
             <p class="ai-tool-title"><a href="{link}" target="_blank">{title}</a></p>
             <p class="ai-tool-desc">{desc}</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span>{new_badge}<span>{source}</span></div>
+            <div class="ai-tool-meta">{cat_badge}{new_badge}<span>{source}</span></div>
         </div>"""
     return f"""
-    <div class="ai-tools-header"><span class="ai-tools-label">신규 AI 툴 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></span><div class="ai-tools-line"></div></div>
-    <div class="ai-tools-grid">{cards}</div>"""
+    <p class="section-label">AI 툴 뉴스 모음</p>
+    <div class="ai-tools-header"><span class="ai-tools-label">RSS 수집 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></span><div class="ai-tools-line"></div></div>
+    <div class="ai-tools-grid ai-tools-news-grid">{cards}</div>"""
 
 
 def _render_insights_html(insights: List[dict]) -> str:
@@ -864,6 +864,11 @@ def _render_insights_html(insights: List[dict]) -> str:
     return f"""
     <p class="section-label">오늘의 마케팅 인사이트</p>
     <div class="insight-cards">{cards}</div>"""
+
+
+def _yt_video_id(link: str) -> str:
+    m = re.search(r"(?:v=|/embed/|youtu\.be/)([a-zA-Z0-9_-]{11})", link or "")
+    return m.group(1) if m else ""
 
 
 def _yt_card_html(v: dict) -> str:
@@ -910,95 +915,59 @@ def _yt_card_html(v: dict) -> str:
     </div>"""
 
 
-def _yt_summary_html(videos: List[dict]) -> str:
-    """Summary panel: 2-column (meta left / video list right) — rule-based, no LLM."""
-    if len(videos) < 2:
+def _yt_micro_summary(videos: List[dict]) -> str:
+    """One-line summary — avoids large 2-column summary card."""
+    if not videos:
         return ""
-
-    all_text = " ".join(
-        (v.get("title") or "") + " " + (v.get("content") or "") for v in videos
-    ).lower()
-    kw_map = {
-        "AI 에이전트·자율실행": ["agent", "agentic", "autonomous", "에이전트"],
-        "LLM 신규 모델 출시": ["gpt", "claude", "gemini", "llama", "모델", "model"],
-        "AI 도구 & 생산성": ["tool", "productivity", "copilot", "workflow", "도구", "생산성"],
-        "AI 규제 & 윤리": ["regulation", "safety", "alignment", "규제", "윤리", "안전"],
-        "AI 코딩 & 개발": ["coding", "cursor", "vscode", "코딩", "개발", "프로그래밍"],
-        "AI 비즈니스 트렌드": ["startup", "funding", "market", "business", "비즈니스", "스타트업"],
-    }
-    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
-    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
-
-    global_vids = [v for v in videos if v.get("region") != "kr"]
-    kr_vids     = [v for v in videos if v.get("region") == "kr"]
-    gl_count    = len(global_vids)
-    kr_count    = len(kr_vids)
-    desc = (
-        f"해외 크리에이터 {gl_count}편, 국내 크리에이터 {kr_count}편을 수집했습니다. "
-        "최근 AI 커뮤니티에서 주목받는 주제를 중심으로 엄선했습니다."
+    gl = sum(1 for v in videos if v.get("region") != "kr")
+    kr = sum(1 for v in videos if v.get("region") == "kr")
+    return (
+        f'<p class="yt-micro-line">📺 <strong>크리에이터 피드</strong> '
+        f'<span class="yt-micro-meta">해외 {gl}편 · 국내 {kr}편</span></p>'
     )
-
-    bullets = []
-    for v in (global_vids + kr_vids)[:6]:
-        channel = escape(v.get("source", ""))
-        title   = escape(v.get("title", ""))
-        region  = v.get("region", "global")
-        flag    = "🇰🇷" if region == "kr" else "🌎"
-        bullets.append(f"<li><strong>{flag} {channel}</strong> — {title}</li>")
-    bullet_html = "\n".join(bullets)
-
-    return f"""
-    <div class="yt-summary-card">
-        <div class="yt-summary-left">
-            <div class="yt-summary-header">
-                <span class="yt-summary-icon">📺</span>
-                <div>
-                    <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
-                    <p class="yt-summary-topics">{topics_text}</p>
-                </div>
-            </div>
-            <p class="yt-summary-desc">{desc}</p>
-        </div>
-        <div class="yt-summary-right">
-            <ul class="yt-summary-list">{bullet_html}</ul>
-        </div>
-    </div>"""
 
 
 def _render_youtube_section(videos: List[dict]) -> str:
-    """YouTube section wrapped in a single box: summary + global/kr grids."""
+    """Compact YouTube: one-line summary + small thumbnail list (minimal footprint)."""
     if not videos:
         return ""
 
-    global_vids = [v for v in videos if v.get("region") != "kr"][:8]
-    kr_vids     = [v for v in videos if v.get("region") == "kr"][:8]
+    global_vids = [v for v in videos if v.get("region") != "kr"][:3]
+    kr_vids     = [v for v in videos if v.get("region") == "kr"][:3]
 
-    summary = _yt_summary_html(videos)
+    summary = _yt_micro_summary(videos)
+
+    def _compact_list(vids: List[dict]) -> str:
+        items = ""
+        for v in vids:
+            vid_id = v.get("video_id") or _yt_video_id(v.get("link", ""))
+            link = escape(v.get("link", "#"))
+            title = escape(v.get("title", ""))
+            channel = escape(v.get("source", ""))
+            thumb = f"https://i.ytimg.com/vi/{vid_id}/mqdefault.jpg" if vid_id else ""
+            thumb_html = f'<img class="yt-compact-thumb" src="{thumb}" alt="">' if thumb else ""
+            items += f"""<a href="{link}" target="_blank" class="yt-compact-item">
+                {thumb_html}
+                <div class="yt-compact-text">
+                    <span class="yt-compact-title">{title}</span>
+                    <span class="yt-compact-channel">{channel}</span>
+                </div>
+            </a>"""
+        return items
 
     global_section = ""
     if global_vids:
-        cards = "".join(_yt_card_html(v) for v in global_vids)
-        global_section = f"""
-        <div class="yt-sub-section">
-            <p class="yt-sub-label">🌎 해외 크리에이터</p>
-            <div class="yt-grid">{cards}</div>
-        </div>"""
+        global_section = f'<div class="yt-compact-group"><p class="yt-sub-label">🌎 해외</p><div class="yt-compact-list">{_compact_list(global_vids)}</div></div>'
 
     kr_section = ""
     if kr_vids:
-        cards = "".join(_yt_card_html(v) for v in kr_vids)
-        kr_section = f"""
-        <div class="yt-sub-section">
-            <p class="yt-yt-sub-label yt-sub-label">🇰🇷 국내 크리에이터</p>
-            <div class="yt-grid">{cards}</div>
-        </div>"""
+        kr_section = f'<div class="yt-compact-group"><p class="yt-sub-label">🇰🇷 국내</p><div class="yt-compact-list">{_compact_list(kr_vids)}</div></div>'
 
     return f"""
     <p class="section-label">AI 크리에이터 영상</p>
-    <div class="yt-section">
+    <div class="yt-section yt-section-compact">
         {summary}
-        {global_section}
-        {kr_section}
+        <div class="yt-compact-grid">{global_section}{kr_section}</div>
     </div>"""
 
 
@@ -1126,6 +1095,7 @@ def build_daily_page(
     nav_right = f'<a href="{next_date}.html">{next_date} &rarr;</a>' if next_date else '<span></span>'
     tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
     yt_section = _render_youtube_section(youtube_videos or [])
+    tool_dir_html = _render_tool_directory_table()
 
     body = f"""
     <header class="masthead">
@@ -1141,6 +1111,7 @@ def build_daily_page(
         <span class="nav-center"><a href="../index.html">전체 목록</a></span>
         {nav_right}
     </nav>
+    {tool_dir_html}
     {_render_ai_tools_html(ai_tools_ko)}
     {_render_insights_html(insights)}
     {yt_section}
@@ -1173,15 +1144,14 @@ def build_index_page(
 
     subscribe_html = _subscribe_banner_html()
 
-    tool_db = _merge_tools_to_db(ai_tools_ko)
-    ai_tools_html = _render_ai_tools_by_category(ai_tools_ko, tool_db)
+    ai_tools_html = _render_ai_tools_html(ai_tools_ko)
+    tool_dir_html = _render_tool_directory_table()
     insights_html = _render_insights_html(latest_insights)
     yt_html = _render_youtube_section(youtube_videos or [])
     articles_html = _render_article_cards(articles_ko, limit=9)
 
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)
-    tool_count = len(tool_db) or len(ai_tools_ko)
-    tool_line = f" · AI 툴 {tool_count}건" if tool_count else ""
+    tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
 
     body = f"""
     <header class="masthead">
@@ -1192,6 +1162,7 @@ def build_index_page(
             <p class="masthead-count">기사 {len(latest_articles)}건{tool_line}</p>
         </div>
     </header>
+    {tool_dir_html}
     {ai_tools_html}
     {insights_html}
     {yt_html}
