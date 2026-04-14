@@ -243,52 +243,88 @@ def _has_korean(text: str) -> bool:
 
 _INSIGHT_TEMPLATES = [
     {
-        "keywords": ["ai", "llm", "gpt", "claude", "gemini", "model", "anthropic", "openai", "ollama"],
-        "title": "AI 모델 경쟁이 마케팅 스택 선택 기준을 바꾸고 있다",
+        "tag": "AI & 기술",
+        "keywords": ["ai", "llm", "gpt", "claude", "gemini", "model", "anthropic", "openai", "agent", "copilot"],
+        "title": "AI 에이전트 경쟁의 진짜 전장은 마케터의 워크플로우다",
         "body": (
-            "OpenAI·Anthropic·Google 등 AI 모델 간 성능 격차가 줄어들면서, 마케터에게 중요한 판단 기준은 '어느 모델이 더 좋은가'보다 "
-            "'우리 스택과 얼마나 잘 통합되는가'로 이동하고 있습니다. "
-            "콘텐츠 생성·광고 카피·고객 응대 등 실무 적용 범위가 빠르게 넓어지는 만큼, "
-            "도구 선정보다 내부 프로세스 재설계와 품질 관리 체계 구축이 먼저입니다."
+            "OpenAI·Anthropic·Google이 잇따라 에이전트 기능을 내놓으며 '자율 실행' 경쟁이 본격화되고 있습니다. "
+            "마케터 입장에서 의미 있는 변화는 모델 성능 자체보다, 이 에이전트들이 광고 집행·리포트 생성·콘텐츠 초안 작성 등 "
+            "반복 업무를 실제로 대체하기 시작했다는 사실입니다. "
+            "도구 도입보다 앞서야 할 과제는 '어떤 판단은 반드시 사람이 해야 하는가'를 명확히 정의하는 것이며, "
+            "이를 정리하지 않은 팀은 자동화 이후 오히려 품질 관리 부담이 늘어날 수 있습니다."
         ),
     },
     {
-        "keywords": ["automation", "workflow", "campaign", "ads", "performance", "targeting", "자동화", "광고"],
-        "title": "마케팅 자동화, 효율보다 설계 품질이 성과를 결정한다",
+        "tag": "퍼포먼스",
+        "keywords": ["automation", "campaign", "ads", "performance", "targeting", "bidding", "roas", "cpa", "자동화", "광고", "입찰"],
+        "title": "자동화 성숙기: 운영 효율이 아닌 신호 품질이 ROAS를 결정한다",
         "body": (
-            "캠페인 셋업·크리에이티브 테스트·입찰 최적화의 자동화 도입이 업계 표준이 되면서, "
-            "자동화 자체는 더 이상 경쟁 우위가 아닙니다. "
-            "차별화 포인트는 '무엇을 자동화하지 않을 것인가'에 대한 명확한 판단과, "
-            "학습 루프에 투입되는 퍼스트파티 데이터의 품질에서 갈립니다."
+            "Meta Advantage+·Google PMax 등 완전 자동화 캠페인이 기본값이 되면서, "
+            "입찰·타겟팅·소재 배분은 이미 알고리즘이 담당하고 있습니다. "
+            "성과 격차가 벌어지는 지점은 '어떤 신호를 모델에 주느냐' — 즉 픽셀 데이터 품질, "
+            "전환 이벤트 설계, 오프라인 전환 매칭 체계입니다. "
+            "지금 점검해야 할 것은 캠페인 세팅이 아니라, 모델에 입력되는 퍼스트파티 데이터의 정합성입니다."
         ),
     },
     {
-        "keywords": ["search", "seo", "geo", "generative", "content", "검색", "콘텐츠", "생성"],
-        "title": "생성형 검색 확산으로 콘텐츠 전략의 성공 기준이 달라진다",
+        "tag": "검색 & 콘텐츠",
+        "keywords": ["search", "seo", "geo", "generative", "perplexity", "chatgpt search", "content", "검색", "콘텐츠", "생성형"],
+        "title": "GEO 시대, 클릭률 대신 '인용 가능성'이 콘텐츠 성과 지표가 된다",
         "body": (
-            "AI 기반 생성형 답변이 검색 결과 상단을 차지하면서, 클릭 유도형 콘텐츠보다 "
-            "AI가 인용·요약할 수 있는 구조적 콘텐츠의 중요성이 높아지고 있습니다. "
-            "브랜드는 SEO 키워드 전략에 더해, 신뢰 출처로 인용되기 위한 전문성·구조화 데이터·권위 지표를 "
-            "동시에 관리해야 하는 이중 전략이 필요한 시점입니다."
+            "Perplexity·ChatGPT 검색·Google AI Overviews가 쿼리의 30% 이상을 처리하면서, "
+            "클릭을 유도하는 헤드라인 중심 콘텐츠의 유효성이 구조적으로 낮아지고 있습니다. "
+            "AI가 우선 인용하는 콘텐츠의 공통 속성은 E-E-A-T 신호, 구조화된 답변 형식, "
+            "업계 내 외부 링크 권위입니다. "
+            "SEO 예산의 일부를 '우리 브랜드가 AI 답변에 포함되는가'를 추적·개선하는 GEO 체계로 "
+            "재배분하는 전략을 지금 시작해야 합니다."
         ),
     },
     {
-        "keywords": ["brand", "customer", "experience", "loyalty", "브랜드", "고객", "경험", "충성"],
-        "title": "브랜드 차별화의 축이 기능에서 경험 설계로 이동 중",
+        "tag": "브랜드 전략",
+        "keywords": ["brand", "customer", "experience", "loyalty", "personalization", "crm", "브랜드", "고객", "경험", "충성", "개인화"],
+        "title": "개인화 고도화 역설: 브랜드 일관성이 다시 핵심 자산이 된다",
         "body": (
-            "제품·서비스 스펙 중심의 경쟁이 포화되면서, 고객 경험의 일관성과 감정적 연결이 "
-            "재구매·추천 행동을 결정하는 핵심 변수로 부상하고 있습니다. "
-            "AI 기반 개인화가 고도화될수록, 브랜드가 스스로 정의하는 가치와 톤앤매너의 일관성이 "
-            "알고리즘 의존도를 낮추는 장기적 자산이 됩니다."
+            "AI 기반 초개인화가 확산되면서 아이러니하게도 브랜드 정체성의 명확성이 더 중요해지고 있습니다. "
+            "알고리즘이 무한히 개인화된 메시지를 생성할수록, '어떤 브랜드인가'에 대한 일관된 톤과 포지션이 "
+            "실제 구매 결정의 앵커가 됩니다. "
+            "지금 필요한 것은 AI 활용 범위를 넓히는 동시에, 브랜드 가이드라인을 AI 출력물 검수 기준으로 "
+            "재정의하는 '브랜드 거버넌스 레이어' 구축입니다."
         ),
     },
     {
-        "keywords": ["data", "privacy", "cookie", "measurement", "analytics", "데이터", "개인정보", "측정"],
-        "title": "측정 패러다임 전환 — 퍼스트파티 데이터 기반 체계 구축이 시급하다",
+        "tag": "데이터 & 측정",
+        "keywords": ["data", "privacy", "cookie", "measurement", "analytics", "mmm", "attribution", "데이터", "개인정보", "측정", "어트리뷰션"],
+        "title": "포스트 쿠키 측정 공백, MMM 재도입이 아니라 하이브리드 체계가 답이다",
         "body": (
-            "서드파티 쿠키 종료와 플랫폼 개인정보 규제 강화로, 광고 성과 측정의 신뢰도가 구조적으로 낮아지고 있습니다. "
-            "MMM(마케팅 믹스 모델)·인크리멘탈리티 테스트·퍼스트파티 데이터 클린룸 등 "
-            "대안 측정 체계를 조기에 도입한 팀이 예산 최적화와 ROI 증명 모두에서 우위를 점하게 됩니다."
+            "서드파티 쿠키 종료 이후 라스트클릭 어트리뷰션의 신뢰도가 무너지면서 "
+            "MMM(마케팅 믹스 모델)에 대한 관심이 다시 높아지고 있습니다. "
+            "그러나 MMM 단독으로는 6~8주 지연이 발생해 실시간 최적화가 불가합니다. "
+            "선도 기업들은 MMM(장기 예산 배분) + 인크리멘탈리티 테스트(채널별 증분 효과) + "
+            "퍼스트파티 데이터 클린룸(실시간 시그널)을 결합한 3단 체계로 전환하고 있습니다. "
+            "이 인프라를 먼저 갖춘 팀이 내년 예산 시즌의 협상력에서 우위를 점합니다."
+        ),
+    },
+    {
+        "tag": "플랫폼 변화",
+        "keywords": ["platform", "meta", "google", "tiktok", "retail media", "amazon", "youtube", "platform", "플랫폼", "미디어"],
+        "title": "리테일 미디어 급성장, D2C 브랜드의 미디어 믹스 재구성이 필요하다",
+        "body": (
+            "Amazon Ads·쿠팡 광고·무신사 광고 등 리테일 미디어가 디지털 광고의 3대 축으로 자리잡으면서, "
+            "기존 Meta·Google 중심의 퍼포먼스 미디어 믹스를 재구성해야 할 시점이 왔습니다. "
+            "리테일 미디어의 핵심 강점은 구매 의도가 가장 높은 순간의 노출이지만, "
+            "크리에이티브 포맷·측정 방식·최소 예산 요건이 기존 플랫폼과 완전히 다릅니다. "
+            "전담 운영 역량 없이 예산만 이동하면 기대 ROAS를 달성하기 어렵습니다."
+        ),
+    },
+    {
+        "tag": "AI & 기술",
+        "keywords": ["tool", "launch", "release", "product", "feature", "microsoft", "apple", "툴", "출시", "기능", "제품"],
+        "title": "AI 툴 홍수 속에서 마케터의 진짜 질문은 '채택 속도'가 아니다",
+        "body": (
+            "매주 수십 개의 AI 마케팅 툴이 출시되는 환경에서, 빠른 채택이 곧 경쟁력이라는 인식이 퍼지고 있습니다. "
+            "그러나 실제 성과와 연결된 팀들의 공통점은 도구 수가 아니라 '하나의 툴로 어떤 프로세스를 바꿨는가'의 명확성입니다. "
+            "마케팅 조직에 지금 필요한 것은 AI 툴 레이더 운영보다, "
+            "파일럿 → 성과 측정 → 전사 확산의 표준 평가 프레임워크 수립입니다."
         ),
     },
 ]
@@ -313,7 +349,6 @@ def _fallback_three_insights(articles: List[dict]) -> List[dict]:
 
     out: List[dict] = []
     for i, tmpl in enumerate(chosen[:3]):
-        # attach real article titles as evidence where possible
         evid_arts = [
             (a.get("title") or "")[:70]
             for a in articles[:10]
@@ -322,6 +357,7 @@ def _fallback_three_insights(articles: List[dict]) -> List[dict]:
         out.append({
             "title": tmpl["title"],
             "body": tmpl["body"],
+            "tag": tmpl.get("tag", ""),
             "evidence": evid_arts,
         })
     return out[:3]
@@ -561,34 +597,37 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
 
 
 def _render_insights_html(insights: List[dict]) -> str:
-    """3 marketing insight rows — insight first, source tag at footer."""
+    """3 marketing insight cards — numbered badge, category tag, body, source chips."""
     if not insights:
         return ""
-    rows = ""
+    cards = ""
     for idx, ins in enumerate(insights[:3], 1):
         title = escape(ins.get("title") or "")
         body = escape(ins.get("body") or "")
+        tag = escape(ins.get("tag") or "")
         evid = ins.get("evidence") or []
+        tag_html = f'<span class="ins-tag">{tag}</span>' if tag else ""
         src_tags = "".join(
-            f'<span class="ins-src">{escape(str(e)[:60])}</span>'
+            f'<span class="ins-src">{escape(str(e)[:55])}</span>'
             for e in evid[:3] if e
         )
         src_html = (
-            f'<div class="ins-sources"><span class="ins-src-label">출처</span>{src_tags}</div>'
+            f'<div class="ins-sources"><span class="ins-src-label">관련 기사</span>{src_tags}</div>'
             if src_tags else ""
         )
-        rows += f"""
-        <div class="insight-row">
-            <span class="ins-num">0{idx}</span>
-            <div class="ins-body">
-                <h3 class="ins-title">{title}</h3>
-                <p class="ins-text">{body}</p>
-                {src_html}
+        cards += f"""
+        <div class="insight-card">
+            <div class="ins-card-header">
+                <span class="ins-badge">0{idx}</span>
+                {tag_html}
             </div>
+            <h3 class="ins-title">{title}</h3>
+            <p class="ins-text">{body}</p>
+            {src_html}
         </div>"""
     return f"""
     <p class="section-label">오늘의 마케팅 인사이트</p>
-    <div class="insight-rows">{rows}</div>"""
+    <div class="insight-cards">{cards}</div>"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
