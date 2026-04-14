@@ -72,11 +72,13 @@ body {
 a { color: var(--link); text-decoration: none; transition: color 0.15s ease; }
 a:hover { color: var(--accent-hover); }
 
-/* ── layout ───────────────────────────────── */
+/* ── layout (full-width, comfortable padding) ─ */
 .container {
-    max-width: 960px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 clamp(16px, 3vw, 48px) 3rem;
+    box-sizing: border-box;
 }
 
 /* ── masthead ─────────────────────────────── */
@@ -159,7 +161,7 @@ a:hover { color: var(--accent-hover); }
 }
 .ai-tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 12px;
     margin-bottom: 32px;
 }
@@ -190,7 +192,7 @@ a:hover { color: var(--accent-hover); }
     line-height: 1.55;
     color: var(--text-muted);
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -236,11 +238,29 @@ a:hover { color: var(--accent-hover); }
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
 }
+.section-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: -8px 0 20px;
+    line-height: 1.55;
+}
+.insight-evidence {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    line-height: 1.5;
+}
+.insight-point .digest-summary {
+    font-size: 14px;
+    line-height: 1.75;
+}
 
 /* ── digest cards ─────────────────────────── */
 .digest-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 16px;
     margin-bottom: 36px;
 }
@@ -317,7 +337,7 @@ a:hover { color: var(--accent-hover); }
 /* ── article list ─────────────────────────── */
 .article-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 14px;
     margin-bottom: 36px;
 }
@@ -422,14 +442,58 @@ a:hover { color: var(--accent-hover); }
     padding: 20px 24px;
     margin-bottom: 28px;
     display: flex;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-end;
+    gap: 16px 24px;
     flex-wrap: wrap;
 }
-.sub-icon { font-size: 28px; }
-.sub-copy { flex: 1; min-width: 200px; }
-.sub-title { font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 2px; }
-.sub-desc { font-size: 12px; color: rgba(255,255,255,0.8); margin: 0; }
+.sub-icon { font-size: 28px; align-self: center; }
+.sub-copy { flex: 1 1 220px; min-width: 200px; }
+.sub-title { font-size: 15px; font-weight: 700; color: #fff; margin: 0 0 2px; letter-spacing: -0.2px; }
+.sub-desc { font-size: 12px; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.5; }
+.sub-count { font-size: 11px; color: rgba(255,255,255,0.65); margin: 6px 0 0; }
+
+.subscribe-form,
+form.subscribe-form {
+    flex: 2 1 360px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+    min-width: min(100%, 420px);
+}
+.sub-email-input {
+    flex: 1 1 200px;
+    min-width: 180px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+.sub-email-input::placeholder { color: rgba(255,255,255,0.5); }
+.sub-email-input:focus {
+    border-color: rgba(255,255,255,0.65);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
+}
+.sub-submit-btn {
+    flex: 0 0 auto;
+    padding: 12px 22px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: #C46644;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.sub-submit-btn:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+}
+#subscribe-cfg-json { display: none; }
 
 /* ── tab section / archive ───────────────── */
 .tab-section {

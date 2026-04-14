@@ -11,201 +11,236 @@
 
     <header class="masthead">
         <div><p class="masthead-wordmark">Marketing AI Brief</p>
-        <h1 class="masthead-title">Today's Marketing AI Insight</h1></div>
+        <h1 class="masthead-title">오늘의 마케팅 AI 인사이트</h1></div>
         <div class="masthead-right">
-            <p class="masthead-date">2026-04-14 02:51 KST</p>
-            <p class="masthead-count">29 articles · 6 tools</p>
+            <p class="masthead-date">최신 이슈일 2026-04-13 · 2026-04-14 09:13 KST</p>
+            <p class="masthead-count">기사 29건 · AI 툴 8건</p>
         </div>
     </header>
     
-    <div class="subscribe-banner">
+    <div class="subscribe-banner js-subscribe-root">
         <div class="sub-icon">📮</div>
         <div class="sub-copy">
-            <p class="sub-title">매일 오전 8시, 마케팅 AI 인사이트를 받아보세요</p>
-            <p class="sub-desc">Daily Brief를 가장 먼저 받아보는 무료 구독</p>
+            <p class="sub-title">매일 오전 9시, 마케팅 AI 인사이트를 받아보세요</p>
+            <p class="sub-desc">데일리 브리프를 이메일로 보내드립니다 — 무료 구독</p>
+            <p class="sub-count">1명 구독 중</p>
         </div>
+        
+        <div class="subscribe-form subscribe-form--js">
+            <input type="email" class="sub-email-input" placeholder="your-email@company.com"
+                   autocomplete="email" aria-label="구독 이메일" />
+            <button type="button" class="sub-submit-btn">🔔 구독하기</button>
+        </div>
+        <script type="application/json" id="subscribe-cfg-json">{"streamlit": "", "mailto": ""}</script>
+        <script>
+        (function() {
+          var j = document.getElementById('subscribe-cfg-json');
+          if (!j) return;
+          var cfg = {};
+          try { cfg = JSON.parse(j.textContent); } catch (e) { return; }
+          var root = j.previousElementSibling;
+          if (!root || !root.classList.contains('subscribe-form--js')) return;
+          var inp = root.querySelector('.sub-email-input');
+          var btn = root.querySelector('.sub-submit-btn');
+          if (!inp || !btn) return;
+          btn.addEventListener('click', function() {
+            var e = (inp.value || '').trim();
+            if (!e) { alert('이메일을 입력해 주세요.'); return; }
+            if (cfg.streamlit) {
+              var u = cfg.streamlit + (cfg.streamlit.indexOf('?') > -1 ? '&' : '?') +
+                'subscribe_email=' + encodeURIComponent(e);
+              window.open(u, '_blank');
+              return;
+            }
+            if (cfg.mailto) {
+              window.location.href = 'mailto:' + cfg.mailto +
+                '?subject=' + encodeURIComponent('[Marketing AI Brief] 구독 신청') +
+                '&body=' + encodeURIComponent('구독 이메일: ' + e);
+              return;
+            }
+            alert('구독 처리 URL이 빌드 시 설정되지 않았습니다. 담당자에게 문의하거나, ' +
+              'MARKETING_BRIEF_FORMSPREE_ACTION / MARKETING_BRIEF_STREAMLIT_URL / MARKETING_BRIEF_SUBSCRIBE_MAILTO를 설정한 뒤 publish.py를 다시 실행하세요.');
+          });
+        })();
+        </script>
     </div>
     
-    <div class="ai-tools-header"><span class="ai-tools-label">New AI Tools</span><div class="ai-tools-line"></div></div>
+    <div class="ai-tools-header"><span class="ai-tools-label">신규 AI 툴</span><div class="ai-tools-line"></div></div>
     <div class="ai-tools-grid">
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMi6wFBVV95cUxQOFZmMGJ0cTZtQVNVaVpjVzFtSEhadVU2Ul9RUWtiaW9wMWJxMmVqQy1BaVB6azNMTjV2VjhQTnhuTndBajh1Um9vTmg0b0pHVmNFNWNsYTE3N1JyQWdsSHJVVXR6RHNaWW5XbTVuWVY3REtpOVIwNlEzTllWMEZqQi12SmViR210LWFoY1V6d0ZTcnRYQVRTSWRaRUJ2S204Wko3V2hiMW5oclJGVEU4UEduUHNHSUtXUXVFSHNmX1dSNmJlRkNlaExhTEZWMW1VQ1Z5aTNURG9qX0ZuVUxaNWlCOUNLY0d4U1U40gHwAUFVX3lxTE92NHhPY1BMYTdVTDdzaFc3ME0yOEE0OTVNZTJWTVdhQ3c0RzFxN2luR29jYXptUmZFYlN3MS1BZEozX1Q3SFdGcUhrdHprQjBNZ1pKX1FSSzdhUU9leVJpZHRtY0dBVU04ekRmVW5SbVAzd2JOUkwteTFuUnVNa1puRDNVaTNnMGJsYkxkdFhVTTV2Wmh5RkthNndKQk45dEZySjQtRDZ2QXh1N3A0SjBlMmk4ejQtU19VMkhXcVRqMXU0Um1mcWhBeGVWaW5WV2RELUdjTl9vdlVmQ1VQQzktWWdsZXU2Z0pmZHZkbXVydA?oc=5" target="_blank">How Anthropic’s new AI tool for Microsoft Word may be ‘problem’ for Copilot - The Times of India</a></p>
-            <p class="ai-tool-desc">How Anthropic’s new AI tool for Microsoft Word may be ‘problem’ for Copilot The Times of India</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span class="badge badge-new">NEW</span><span>The Times of India</span></div>
+            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMi6wFBVV95cUxQOFZmMGJ0cTZtQVNVaVpjVzFtSEhadVU2Ul9RUWtiaW9wMWJxMmVqQy1BaVB6azNMTjV2VjhQTnhuTndBajh1Um9vTmg0b0pHVmNFNWNsYTE3N1JyQWdsSHJVVXR6RHNaWW5XbTVuWVY3REtpOVIwNlEzTllWMEZqQi12SmViR210LWFoY1V6d0ZTcnRYQVRTSWRaRUJ2S204Wko3V2hiMW5oclJGVEU4UEduUHNHSUtXUXVFSHNmX1dSNmJlRkNlaExhTEZWMW1VQ1Z5aTNURG9qX0ZuVUxaNWlCOUNLY0d4U1U40gHwAUFVX3lxTE92NHhPY1BMYTdVTDdzaFc3ME0yOEE0OTVNZTJWTVdhQ3c0RzFxN2luR29jYXptUmZFYlN3MS1BZEozX1Q3SFdGcUhrdHprQjBNZ1pKX1FSSzdhUU9leVJpZHRtY0dBVU04ekRmVW5SbVAzd2JOUkwteTFuUnVNa1puRDNVaTNnMGJsYkxkdFhVTTV2Wmh5RkthNndKQk45dEZySjQtRDZ2QXh1N3A0SjBlMmk4ejQtU19VMkhXcVRqMXU0Um1mcWhBeGVWaW5WV2RELUdjTl9vdlVmQ1VQQzktWWdsZXU2Z0pmZHZkbXVydA?oc=5" target="_blank">Anthropic의 새로운 마이크로소프트 워드 AI 도구가 코파일럿에 대한 &#x27;문제&#x27;일 수 있다 - 타임즈 오브 인디아</a></p>
+            <p class="ai-tool-desc">인간 중심의 새로운 AI 도구가 마이크로소프트 워드에 대한 &#x27;문제&#x27;로 작용할 수 있습니다</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>The Times of India</span></div>
         </div>
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMi9gFBVV95cUxOQWhHUkttTGN2WDdDZHYyaktiWDB4U3ZBVjJXTHZkbG1BZ3lkTDRsWGlUV2dVNVBDNkMzbjJIYVZQZktmb0VFaFZQTmRmNFVweGJYQnd2aDk2Tm1McE9qVGVFNS1SaHV5RDI5bk12Tkd4TEVtdVRNUnUtT0FaYlNQbi1VQjdWdm83VVQxaFEzMlRhZkU3NzhURlU5NE16QmJ6bHpKYVl4UEJuWGRETzAwLVA3dTBCQmF1SXRMN3B2RkV5MkZyZzU3SklfWnNWSmJrN1hqLXd1TzFTbW50NlQtQ3hrRTBxNnRKbExOcHZYMEppVmFTTkE?oc=5" target="_blank">Weekend Round-Up: Microsoft Azure&#x27;s Growth, Broadcom&#x27;s New Deals, Meta&#x27;s AI Launch And The Anthropic-Pala - Benzinga</a></p>
-            <p class="ai-tool-desc">Weekend Round-Up: Microsoft Azure&#x27;s Growth, Broadcom&#x27;s New Deals, Meta&#x27;s AI Launch And The Anthropic-Pala Benzinga</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span>Benzinga</span></div>
+            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMi9gFBVV95cUxOQWhHUkttTGN2WDdDZHYyaktiWDB4U3ZBVjJXTHZkbG1BZ3lkTDRsWGlUV2dVNVBDNkMzbjJIYVZQZktmb0VFaFZQTmRmNFVweGJYQnd2aDk2Tm1McE9qVGVFNS1SaHV5RDI5bk12Tkd4TEVtdVRNUnUtT0FaYlNQbi1VQjdWdm83VVQxaFEzMlRhZkU3NzhURlU5NE16QmJ6bHpKYVl4UEJuWGRETzAwLVA3dTBCQmF1SXRMN3B2RkV5MkZyZzU3SklfWnNWSmJrN1hqLXd1TzFTbW50NlQtQ3hrRTBxNnRKbExOcHZYMEppVmFTTkE?oc=5" target="_blank">주말 리뷰: 마이크로소프트 애저의 성장, 브로드컴의 새로운 DEALS, 메타의 AI 출시 및 Anthropic-Pala - 벤티자</a></p>
+            <p class="ai-tool-desc">주말 리뷰: 마이크로소프트 애저 성장, 브로드컴 신스дел, 메타 AI 출시 및 안드로픽-팔라 베닝가</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span>Benzinga</span></div>
         </div>
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://www.theverge.com/tech/911080/microsoft-ai-openclaw-365-businesses" target="_blank">Microsoft is testing OpenClaw-like AI bots for 365 Copilot</a></p>
-            <p class="ai-tool-desc">Microsoft is looking into ways it can integrate OpenClaw-style features into 365 Copilot, according to a report from The</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span class="badge badge-new">NEW</span><span>Theverge</span></div>
+            <p class="ai-tool-title"><a href="https://www.theverge.com/tech/911080/microsoft-ai-openclaw-365-businesses" target="_blank">마이크로소프트는 오픈클라우처럼 AI 로봇을 테스트 중이다.</a></p>
+            <p class="ai-tool-desc">마이크로소프트는 정보 보고서에 따르면 OpenClaw-style 특징을 자신의 코파일럿 AI 지원자에 통합하는 방법을 찾고 있는 것으로 보입니다.</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>Theverge</span></div>
         </div>
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMigAFBVV95cUxQM0c4djhoM2NNTDk5UGN1Njl5ZUI0eHZBV21TOHpkVWhraWlsVkVwNDJQQUZIWVZIZ0pkTENvSHlLWi13d29ud3NBbUJSdlI2ZTF6SUxMcEMyWUJCUXBHX1VGLVhadTQyZkp5UFhzbmdYTUdDdHZUWDlNZmpPa0pfVtIBmgFBVV95cUxOaVBPelBsQUJuSG9hVXBhMkZ6S2tmbjFBZk1VYTNLc0VocllLUzNPVlZuMTRiaEx4b1dEZVRINFVneWF6eDZ2d2lKeVhzcU5DLXZKZC1zWXVrd1Bhd1I3RG1SSjBzNnhWS0g0RFFURnM1SEtRQVpva1hOUDFROXYtSlZoMFBGNmFvSlJzMHlRV0w1N2xiN1NiY3J3?oc=5" target="_blank">Anthropic’s new Mythos AI tool signals a new era for cyber risks and responses - The Christian Science Monitor</a></p>
-            <p class="ai-tool-desc">Anthropic’s new Mythos AI tool signals a new era for cyber risks and responses The Christian Science Monitor</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span>The Christian Science Monitor</span></div>
+            <p class="ai-tool-title"><a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTFBsSFNDM3hTWTBKZlVRb19GUlZDZU14QkN3amFoWERKeGFJaGdLdlpJNDlNZjFRRzA1aVNna2tETWxBb0MxZkwwaVFlbEs3d2JEMEVJ?oc=5" target="_blank">LG, 런던증권거래소그룹·키움증권과 금융 AI 에이전트 서비스 출시 3자 업무협약 체결 - 네이트</a></p>
+            <p class="ai-tool-desc">LG, 런던증권거래소 그룹·키움증권과 금융 AI 에이전트 서비스 출시 3자 업무협약 체결</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>네이트</span></div>
         </div>
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://www.theverge.com/ai-artificial-intelligence/911118/openai-memo-cro-ai-competition-anthropic" target="_blank">Read OpenAI’s latest internal memo about beating the competition — including Anthropic</a></p>
-            <p class="ai-tool-desc">OpenAI&#x27;s chief revenue officer, Denise Dresser, sent a four-page memo to employees on Sunday about the company&#x27;s strateg</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span class="badge badge-new">NEW</span><span>Theverge</span></div>
+            <p class="ai-tool-title"><a href="https://techcrunch.com/2026/04/13/microsoft-is-working-on-yet-another-openclaw-like-agent/" target="_blank">마이크로소프트는 또 다른 오픈클라우처럼 에이전트를 개발 중이다.</a></p>
+            <p class="ai-tool-desc">새로운 기능은 엔터프라이즈 고객에게 geared되어 오픈 소스 인 OpenClaw 에이전트보다 더 나은 보안 제어를 갖추고 있습니다.</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>Techcrunch</span></div>
         </div>
         <div class="ai-tool-card">
-            <p class="ai-tool-title"><a href="https://techcrunch.com/2026/04/12/trump-officials-may-be-encouraging-banks-to-test-anthropics-mythos-model/" target="_blank">Trump officials may be encouraging banks to test Anthropic’s Mythos model</a></p>
-            <p class="ai-tool-desc">The report is particularly surprising since the Department of Defense recently declared Anthropic a supply-chain risk.</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span><span class="badge badge-new">NEW</span><span>Techcrunch</span></div>
+            <p class="ai-tool-title"><a href="https://www.theverge.com/ai-artificial-intelligence/911118/openai-memo-cro-ai-competition-anthropic" target="_blank">OpenAI의 최신 내부 메모를 읽으십시오 - Anthropic와 경쟁하는 것들을 이겨냅니다.</a></p>
+            <p class="ai-tool-desc">오픈에이의 최고수익 책임자, 데니스 드레스어( Denise Dresser )는 최근 이사에서 회사의 전략적 방향을 강조하며 사용자를 고정시키고 기업 사업을 성장시키기를 권고하는 4페이지짜리 메모를 직원들에게 보냈습니다.</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>Theverge</span></div>
+        </div>
+        <div class="ai-tool-card">
+            <p class="ai-tool-title"><a href="https://techcrunch.com/2026/04/12/trump-officials-may-be-encouraging-banks-to-test-anthropics-mythos-model/" target="_blank">트럼프 당시는 Anthropic의 신화 모델을 테스트하도록 은행들에게 권장하고있다.</a></p>
+            <p class="ai-tool-desc">신기한 보고서가 특히 매력적이지 않다.</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span>Techcrunch</span></div>
+        </div>
+        <div class="ai-tool-card">
+            <p class="ai-tool-title"><a href="https://www.producthunt.com/products/winscript" target="_blank">WinScript</a></p>
+            <p class="ai-tool-desc">윈도우즈에 적용된 애플 스크립트(AI 데스크탑 제어 논의 | 링크)</p>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span><span class="badge badge-new">신규</span><span>Producthunt</span></div>
         </div></div>
     
-    <p class="section-label">Today's Marketing Trend Insights</p>
+    <p class="section-label">오늘의 마케팅 인사이트</p>
+    <p class="section-sub">오늘 수집된 기사를 바탕으로 정리한 3가지 포인트입니다.</p>
     <div class="digest-grid">
-        <div class="digest-card">
+        <div class="digest-card insight-point">
             <p class="digest-num">01</p>
-            <h3 class="digest-title">Generative Engine Optimization</h3>
-            <p class="digest-summary">AI 기반 마케팅 전략의 주요 동향을 분석한 인사이트입니다.</p>
-            <ul class="digest-kp"><li>AI 기반 마케팅 전략의 변화 가속</li><li>데이터 기반 의사결정 체계 강화 필요</li></ul>
-            <p class="digest-insight-label">Marketing Insight</p>
-            <p class="digest-insight">변화 속도에 맞춘 전략 대응 주기 단축이 핵심 과제입니다.</p>
-            <p class="digest-insight-label">Strategic Implication</p>
-            <p class="digest-insight">조직 내 AI 활용 역량과 거버넌스 프레임워크를 동시에 점검해야 합니다.</p>
-            <div class="digest-sources"></div>
+            <h3 class="digest-title">포인트 1: 핵심 이슈</h3>
+            <p class="digest-summary">오늘 수집된 기사 중 「Chipotle overhauls rewards system」 흐름이 마케팅·AI 담론에서 두드러집니다. More free items and an in-store campaign to boost enrollment could help the fast casual giant expand its already conside…</p>
+            <p class="insight-evidence">연관 기사: Chipotle overhauls rewards system</p>
         </div>
-        <div class="digest-card">
+        <div class="digest-card insight-point">
             <p class="digest-num">02</p>
-            <h3 class="digest-title">AI Automation in Marketing Execution</h3>
-            <p class="digest-summary">AI 기반 마케팅 전략의 주요 동향을 분석한 인사이트입니다.</p>
-            <ul class="digest-kp"><li>AI 기반 마케팅 전략의 변화 가속</li><li>데이터 기반 의사결정 체계 강화 필요</li></ul>
-            <p class="digest-insight-label">Marketing Insight</p>
-            <p class="digest-insight">변화 속도에 맞춘 전략 대응 주기 단축이 핵심 과제입니다.</p>
-            <p class="digest-insight-label">Strategic Implication</p>
-            <p class="digest-insight">조직 내 AI 활용 역량과 거버넌스 프레임워크를 동시에 점검해야 합니다.</p>
-            <div class="digest-sources"></div>
+            <h3 class="digest-title">포인트 2: 핵심 이슈</h3>
+            <p class="digest-summary">오늘 수집된 기사 중 「CIOs: Focus cost optimization on funding growth, not cutting costs - Gartner」 흐름이 마케팅·AI 담론에서 두드러집니다. CIOs: Focus cost optimization on funding growth, not cutting costs Gartner…</p>
+            <p class="insight-evidence">연관 기사: CIOs: Focus cost optimization on funding growth, not cutting costs - Gartner</p>
         </div>
-        <div class="digest-card">
+        <div class="digest-card insight-point">
             <p class="digest-num">03</p>
-            <h3 class="digest-title">Marketing AI Trend</h3>
-            <p class="digest-summary">AI 기반 마케팅 전략의 주요 동향을 분석한 인사이트입니다.</p>
-            <ul class="digest-kp"><li>AI 기반 마케팅 전략의 변화 가속</li><li>데이터 기반 의사결정 체계 강화 필요</li></ul>
-            <p class="digest-insight-label">Marketing Insight</p>
-            <p class="digest-insight">변화 속도에 맞춘 전략 대응 주기 단축이 핵심 과제입니다.</p>
-            <p class="digest-insight-label">Strategic Implication</p>
-            <p class="digest-insight">조직 내 AI 활용 역량과 거버넌스 프레임워크를 동시에 점검해야 합니다.</p>
-            <div class="digest-sources"></div>
+            <h3 class="digest-title">포인트 3: 핵심 이슈</h3>
+            <p class="digest-summary">오늘 수집된 기사 중 「씨큐브, 제3회차 전환사채 20억 전환청구권 행사」 흐름이 마케팅·AI 담론에서 두드러집니다. [디지털투데이 AI공시팀] 화장품·자동차용 특수안료 기업 씨큐브(101240)는 제3회차 전환사채에 대한 전환청구권이 행사됐다고 13일 공시했다. 청구일자는 2026년 4월 13일이며, 청구금액은 20억원이다.이번 …</p>
+            <p class="insight-evidence">연관 기사: 씨큐브, 제3회차 전환사채 20억 전환청구권 행사</p>
         </div></div>
     
-    <p class="section-label">Articles</p>
+    <p class="section-label">오늘의 기사</p>
     <div class="article-grid">
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span></div>
-            <p class="article-title"><a href="https://www.marketingdive.com/news/chipotle-rewards-relaunch-freepotle-returns/817317/" target="_blank">Chipotle overhauls rewards system</a></p>
-            <p class="ai-tool-desc">More free items and an in-store campaign to boost enrollment could help the fast casual giant expand</p>
+            <div class="article-badges"><span class="badge badge-new">신규</span></div>
+            <p class="article-title"><a href="https://www.marketingdive.com/news/chipotle-rewards-relaunch-freepotle-returns/817317/" target="_blank">칩로테가 보상 체계를 새롭게 한다.</a></p>
+            <p class="ai-tool-desc">무료 상품과 매장 캠페인을 통해 수익을 늘려줌으로써 현재 보유하고 있는 엄청난 혜택의 범위를 확대할 수 있다.</p>
             <div class="article-meta"><span>Marketingdive</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-research">RESEARCH</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE5iOGdUMnR1cWk0dXFxem1nbFhMMnJyZzVHYk5fZFB4MHJOV09fZjg3Nmh6Q0dpNm10T0JnMHJaM0l6Rm1yVFBveC1KaDQ4QjZtTjY0WUlmUzdYd3dJek5xZDhsWjFzWjQ?oc=5" target="_blank">CIOs: Focus cost optimization on funding growth, not cutting costs - Gartner</a></p>
-            <p class="ai-tool-desc">CIOs: Focus cost optimization on funding growth, not cutting costs Gartner</p>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE5iOGdUMnR1cWk0dXFxem1nbFhMMnJyZzVHYk5fZFB4MHJOV09fZjg3Nmh6Q0dpNm10T0JnMHJaM0l6Rm1yVFBveC1KaDQ4QjZtTjY0WUlmUzdYd3dJek5xZDhsWjFzWjQ?oc=5" target="_blank">CIO: 비용 최적화에 있어 성장 기금을 먼저 고려하고 비용-cutting에 중점을 두어라 - 가트너</a></p>
+            <p class="ai-tool-desc">CIO: 비용 최적화에 대한 초점을 성장 예산에 두고 비용 절감하지 말라 (Gartner)</p>
             <div class="article-meta"><span>Gartner</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-ko">KR</span></div>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-ko">국문</span></div>
             <p class="article-title"><a href="https://www.digitaltoday.co.kr/news/articleView.html?idxno=656507" target="_blank">씨큐브, 제3회차 전환사채 20억 전환청구권 행사</a></p>
-            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 화장품·자동차용 특수안료 기업 씨큐브(101240)는 제3회차 전환사채에 대한 전환청구권이 행사됐다고 13일 공시했다. 청구일자는 2026년 4월 13일</p>
+            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 화장품·자동차용 특수안료 기업 씨큐브(101240)는 제3회차 전환사채에 대한 전환청구권이 행사됐다고 13일 공시했다. 청구일자는 2026년 4월 13일이며, 청구금액은 20억원이다.이번 청구에 적용된 전환가액은 4035원이며, 전환으로 발행되는 보통주는 49만5662주다. 해당 보통주의 상장일 또는 상장예정일은 2026년 4월 </p>
             <div class="article-meta"><span>Co</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-ko">KR</span></div>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-ko">국문</span></div>
             <p class="article-title"><a href="https://www.digitaltoday.co.kr/news/articleView.html?idxno=656508" target="_blank">수성웹툰, 제23회차 전환사채 만기 전 4억7023만9320원 취득</a></p>
-            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 종합 물류장비·웹툰 유통사 수성웹툰(084180)은 제23회차 전환사채를 만기 전에 취득했다고 13일 공시했다.수성웹툰은 2026년 4월 13일 무기명식</p>
+            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 종합 물류장비·웹툰 유통사 수성웹툰(084180)은 제23회차 전환사채를 만기 전에 취득했다고 13일 공시했다.수성웹툰은 2026년 4월 13일 무기명식이권부 무보증 사모 전환사채를 취득했으며, 사채 취득금액은 4억7023만9320원이다. 취득한 사채의 권면총액은 4억원으로, 취득 후 사채 권면총액은 98억원이다.만기 전 취득 사</p>
             <div class="article-meta"><span>Co</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-ko">KR</span></div>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-ko">국문</span></div>
             <p class="article-title"><a href="https://www.digitaltoday.co.kr/news/articleView.html?idxno=656403" target="_blank">AGI·LLM·환각까지…헷갈리는 AI 용어 짚어보니</a></p>
-            <p class="ai-tool-desc">[디지털투데이 이윤서 기자] 생성형 인공지능(AI) 확산으로 범용인공지능(AGI), 대규모언어모델(LLM), 환각, 토큰 같은 기술 용어가 산업 현장의 공통 언어로 자리 잡고 있다</p>
+            <p class="ai-tool-desc">[디지털투데이 이윤서 기자] 생성형 인공지능(AI) 확산으로 범용인공지능(AGI), 대규모언어모델(LLM), 환각, 토큰 같은 기술 용어가 산업 현장의 공통 언어로 자리 잡고 있다. AI 업계는 연구와 제품, 인프라, 안전 이슈를 설명할 때 전문 용어를 광범위하게 사용하고 있으며, 이를 이해해야 기업 전략과 시장 흐름도 읽을 수 있다는 평가가 나온다.12일</p>
             <div class="article-meta"><span>Co</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-ko">KR</span></div>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-ko">국문</span></div>
             <p class="article-title"><a href="https://www.digitaltoday.co.kr/news/articleView.html?idxno=656511" target="_blank">아이즈비전, 제7회차 전환사채 전환청구권 행사</a></p>
-            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 알뜰폰 업체 아이즈비전(031310)이 제7회차 무기명식 이권부 무보증 사모 전환사채에 대한 전환청구권 행사로 주식 110만9078주를 발행한다고 13일</p>
+            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 알뜰폰 업체 아이즈비전(031310)이 제7회차 무기명식 이권부 무보증 사모 전환사채에 대한 전환청구권 행사로 주식 110만9078주를 발행한다고 13일 공시했다. 이번 행사 전환가액은 1641원이며, 청구금액은 18억2000만원원으로 기재됐다.아이즈비전은 이번 전환청구권 행사 주식수 누계가 110만9078주라고 밝혔다. 이는 금</p>
             <div class="article-meta"><span>Co</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-ko">KR</span></div>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-ko">국문</span></div>
             <p class="article-title"><a href="https://www.digitaltoday.co.kr/news/articleView.html?idxno=656515" target="_blank">머큐리, 제6회차 전환사채 만기 전 1억227만6600원 취득</a></p>
-            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 정보통신장비 전문 기업 머큐리(100590)가 제6회차 전환사채를 만기 전에 취득했다고 13일 공시했다.머큐리는 제6회차 무기명식 이권부 무보증 사모 전</p>
+            <p class="ai-tool-desc">[디지털투데이 AI공시팀] 정보통신장비 전문 기업 머큐리(100590)가 제6회차 전환사채를 만기 전에 취득했다고 13일 공시했다.머큐리는 제6회차 무기명식 이권부 무보증 사모 전환사채를 2026년 4월 13일에 취득했다. 해당 사채는 2024년 1월 12일 국내 사모 방식으로 발행됐고, 만기일은 2029년 1월 12일이다.사채 취득금액은 1억227만660</p>
             <div class="article-meta"><span>Co</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-research">RESEARCH</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxPLURla0ZubVRteEQzM3NuWXdhR3M1V09kbXJxcXNwbjJFSTRFcW5oR09RRUVaWW1GelFUUVA1QXRNOFRyNGcyOW4zOW1PMm1WeUpUWXZ2TVVFck5pUGdkTzhMY2RPUVhFTF9WWVFwUHZjeXdrQ1gtQkRldGhsazNMSlhQOVpXNk4tdkhQT1J0UHFFV0FEcXg5UFJjak8?oc=5" target="_blank">Your Customer Advocates Are Not Your Crisis Communications Plan - Forrester</a></p>
-            <p class="ai-tool-desc">Your Customer Advocates Are Not Your Crisis Communications Plan Forrester</p>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxPLURla0ZubVRteEQzM3NuWXdhR3M1V09kbXJxcXNwbjJFSTRFcW5oR09RRUVaWW1GelFUUVA1QXRNOFRyNGcyOW4zOW1PMm1WeUpUWXZ2TVVFck5pUGdkTzhMY2RPUVhFTF9WWVFwUHZjeXdrQ1gtQkRldGhsazNMSlhQOVpXNk4tdkhQT1J0UHFFV0FEcXg5UFJjak8?oc=5" target="_blank">고객 홍보대리인을 위기 커뮤니케이션 계획으로 여기는 것은 아니다 - 포레스터</a></p>
+            <p class="ai-tool-desc">고객 홍보 대변인들이 위기 통신 계획이 아니다 (Forrester)</p>
             <div class="article-meta"><span>Forrester</span></div>
         </div>
         <div class="article-card">
-            <div class="article-badges"><span class="badge badge-new">NEW</span><span class="badge badge-research">RESEARCH</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE0tR1EydzJ1ZWdfREQwTkljNy1rYXhIRFg1aXgyQVdOdlNhY0RUYlptVkhZY1hQbUxMN0VGZ1dKRUQ4cjlueUJMSDc4U3RETTdTQjNJVzBKdG9aMVVMcld0VERaak1XS1QtdjlTa004LUYzNnFkSDRWamVEbGMwNWc?oc=5" target="_blank">Top SAP Claims Management Alternatives &amp; Competitors 2026 - Gartner</a></p>
-            <p class="ai-tool-desc">Top SAP Claims Management Alternatives &amp; Competitors 2026 Gartner</p>
+            <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE0tR1EydzJ1ZWdfREQwTkljNy1rYXhIRFg1aXgyQVdOdlNhY0RUYlptVkhZY1hQbUxMN0VGZ1dKRUQ4cjlueUJMSDc4U3RETTdTQjNJVzBKdG9aMVVMcld0VERaak1XS1QtdjlTa004LUYzNnFkSDRWamVEbGMwNWc?oc=5" target="_blank">2026년 SAP 클레임 관리 대안 및 경쟁사 TOP - 가트너</a></p>
+            <p class="ai-tool-desc">2026년 SAP CLAIMS MANAGEMENT의 주요 대안 및 경쟁사 (Gartner)</p>
             <div class="article-meta"><span>Gartner</span></div>
         </div></div>
     
     <div class="tab-section">
         
-        <p class="section-label">Daily Brief Archive</p>
+        <p class="section-label">데일리 브리프 아카이브</p>
         <div class="archive-grid">
         <div class="archive-card">
             <a href="issues/2026-04-12.html" class="archive-card-link">
                 <p class="archive-date">2026-04-12</p>
-                <p class="archive-meta">5 articles</p>
+                <p class="archive-meta">기사 5건</p>
             </a>
         </div>
         <div class="archive-card">
             <a href="issues/2026-04-10.html" class="archive-card-link">
                 <p class="archive-date">2026-04-10</p>
-                <p class="archive-meta">5 articles</p>
+                <p class="archive-meta">기사 5건</p>
             </a>
         </div>
         <div class="archive-card">
             <a href="issues/2026-04-09.html" class="archive-card-link">
                 <p class="archive-date">2026-04-09</p>
-                <p class="archive-meta">7 articles</p>
+                <p class="archive-meta">기사 7건</p>
             </a>
         </div>
         <div class="archive-card">
             <a href="issues/2026-04-08.html" class="archive-card-link">
                 <p class="archive-date">2026-04-08</p>
-                <p class="archive-meta">1 articles</p>
+                <p class="archive-meta">기사 1건</p>
             </a>
         </div>
         <div class="archive-card">
             <a href="issues/2026-03-26.html" class="archive-card-link">
                 <p class="archive-date">2026-03-26</p>
-                <p class="archive-meta">1 articles</p>
+                <p class="archive-meta">기사 1건</p>
             </a>
         </div>
         <div class="archive-card">
             <a href="issues/2025-11-17.html" class="archive-card-link">
                 <p class="archive-date">2025-11-17</p>
-                <p class="archive-meta">1 articles</p>
+                <p class="archive-meta">기사 1건</p>
             </a>
         </div></div>
         
-        <p class="section-label">📊 Weekly Reports</p>
+        <p class="section-label">📊 주간 리포트</p>
         <ul class="issue-list">
             <li class="issue-item">
                 <a class="issue-date" href="reports/weekly-2026-W14.html">2026-04-06 ~ 2026-04-12</a>
-                <span class="issue-meta">18 articles</span>
+                <span class="issue-meta">기사 18건</span>
                 <span class="issue-arrow">&rarr;</span>
             </li></ul>
         
-        <p class="section-label">📈 Monthly Reports</p>
+        <p class="section-label">📈 월간 리포트</p>
         <p class="coming-soon">기사가 충분히 누적되면 월간 리포트가 자동 생성됩니다.</p>
     </div>
     <footer class="footer">
-        <p>Marketing AI Brief &middot; Powered by Ollama + Streamlit</p>
+        <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
     </footer>
 </div>
 </body>
