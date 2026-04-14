@@ -596,10 +596,23 @@ def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 60) -> List[Dict[str
 
 
 # ── Korea AI radar (curated domestic RSS + light keyword gate) ───────
+# Note: Naver D2 (d2.naver.com) is intentionally omitted here — it dominated the
+# radar with engineering posts; D2 remains in KO_SOURCE_FEEDS for the main digest.
 KR_AI_RADAR_FEEDS: Tuple[str, ...] = (
-    *KO_SOURCE_FEEDS,
+    "https://platum.kr/feed",
+    "https://tech.kakao.com/feed",
+    "https://www.digitaltoday.co.kr/rss/allArticle.xml",
     "https://www.aitimes.com/rss/allArticle.xml",
 )
+
+_KR_RADAR_NAVER_LINK_CAP = 1
+
+
+def _kr_radar_link_is_naver_host(link: str) -> bool:
+    try:
+        return "naver" in urlsplit((link or "").strip()).netloc.lower()
+    except Exception:
+        return False
 
 _KR_AI_RADAR_PAT = re.compile(
     r"인공지능|생성형|생성\s*형|\bAI\b|에이아이|ChatGPT|챗지피티|GPT|"
@@ -775,9 +788,19 @@ def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[D
     collected.sort(
         key=lambda x: (-x.get("_mkt_rank", 0), -x["published_at"].timestamp())
     )
+    out: List[Dict[str, Any]] = []
+    naver_links = 0
     for item in collected:
+        if len(out) >= limit:
+            break
+        link = (item.get("link") or "").strip()
+        if _kr_radar_link_is_naver_host(link):
+            if naver_links >= _KR_RADAR_NAVER_LINK_CAP:
+                continue
+            naver_links += 1
         item.pop("_mkt_rank", None)
-    return collected[:limit]
+        out.append(item)
+    return out
 
 
 # ── AI Tool news collector ──────────────────────────────────────────
