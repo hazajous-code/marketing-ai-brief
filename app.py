@@ -290,6 +290,72 @@ NEWSLETTER_CSS = """
 }
 .digest-sources a:hover { text-decoration: underline; }
 
+/* ── insight rows (오늘의 마케팅 인사이트) ─── */
+.insight-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+.insight-row {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s;
+}
+.insight-row:hover { box-shadow: var(--shadow-md); }
+.ins-num {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--accent);
+    min-width: 22px;
+    padding-top: 4px;
+    flex-shrink: 0;
+}
+.ins-body { flex: 1; min-width: 0; }
+.ins-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 7px;
+    line-height: 1.4;
+}
+.ins-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+}
+.ins-sources {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.ins-src-label {
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-right: 2px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+.ins-src {
+    font-size: 11px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
 /* ── divider ───────────────────────────────── */
 .section-divider {
     border: none;
@@ -926,34 +992,40 @@ def render_daily_digest(items: List[dict]) -> None:
     if not insights:
         return
 
-    cols = st.columns(3, gap="medium")
-    nums = ["01", "02", "03"]
+    rows_html = ""
+    for idx, ins in enumerate(insights[:3], 1):
+        # Prefer marketing_insight as the main insight line; fall back to summary
+        insight_body = ins.get("marketing_insight") or ins.get("summary") or ""
+        supporting = ins.get("strategic_implication") or ""
+        full_text = escape(insight_body)
+        if supporting and supporting != insight_body:
+            full_text += f'<br><span style="color:var(--text-muted);font-size:12.5px;">{escape(supporting)}</span>'
 
-    for idx, ins in enumerate(insights[:3]):
-        bullets = "".join(f"<li>{escape(k)}</li>" for k in ins.get("key_points", [])[:3])
-        links = "".join(
-            f'<li><a href="{escape(s.get("link","#"))}" target="_blank">{escape(s.get("title","—"))}</a></li>'
-            for s in ins.get("sources", [])[:3]
+        sources = ins.get("sources") or []
+        src_tags = "".join(
+            f'<span class="ins-src"><a href="{escape(s.get("link","#"))}" target="_blank" '
+            f'style="color:inherit;text-decoration:none;">{escape(s.get("title","—")[:50])}</a></span>'
+            for s in sources[:3]
         )
-        with cols[idx]:
-            st.markdown(
-                f"""
-                <div class="digest-card">
-                    <p class="digest-num">{nums[idx]}</p>
-                    <h2 class="digest-title">{escape(ins.get("title",""))}</h2>
-                    <p class="digest-body">{escape(ins.get("summary",""))}</p>
-                    <ul class="digest-bullets">{bullets}</ul>
-                    <p class="digest-lbl">Marketing Insight</p>
-                    <p class="digest-val">{escape(ins.get("marketing_insight",""))}</p>
-                    <p class="digest-lbl">Strategic Implication</p>
-                    <p class="digest-val">{escape(ins.get("strategic_implication",""))}</p>
-                    <p class="digest-lbl">Sources</p>
-                    <ul class="digest-sources">{links}</ul>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        src_html = (
+            f'<div class="ins-sources"><span class="ins-src-label">출처</span>{src_tags}</div>'
+            if src_tags else ""
+        )
+        rows_html += f"""
+        <div class="insight-row">
+            <span class="ins-num">0{idx}</span>
+            <div class="ins-body">
+                <h3 class="ins-title">{escape(ins.get("title",""))}</h3>
+                <p class="ins-text">{full_text}</p>
+                {src_html}
+            </div>
+        </div>"""
 
+    st.markdown(
+        f'<p class="section-lbl">오늘의 마케팅 인사이트</p>'
+        f'<div class="insight-rows">{rows_html}</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 

@@ -241,26 +241,88 @@ def _has_korean(text: str) -> bool:
     return bool(_HANGUL_RE.search(text or ""))
 
 
+_INSIGHT_TEMPLATES = [
+    {
+        "keywords": ["ai", "llm", "gpt", "claude", "gemini", "model", "anthropic", "openai", "ollama"],
+        "title": "AI 모델 경쟁이 마케팅 스택 선택 기준을 바꾸고 있다",
+        "body": (
+            "OpenAI·Anthropic·Google 등 AI 모델 간 성능 격차가 줄어들면서, 마케터에게 중요한 판단 기준은 '어느 모델이 더 좋은가'보다 "
+            "'우리 스택과 얼마나 잘 통합되는가'로 이동하고 있습니다. "
+            "콘텐츠 생성·광고 카피·고객 응대 등 실무 적용 범위가 빠르게 넓어지는 만큼, "
+            "도구 선정보다 내부 프로세스 재설계와 품질 관리 체계 구축이 먼저입니다."
+        ),
+    },
+    {
+        "keywords": ["automation", "workflow", "campaign", "ads", "performance", "targeting", "자동화", "광고"],
+        "title": "마케팅 자동화, 효율보다 설계 품질이 성과를 결정한다",
+        "body": (
+            "캠페인 셋업·크리에이티브 테스트·입찰 최적화의 자동화 도입이 업계 표준이 되면서, "
+            "자동화 자체는 더 이상 경쟁 우위가 아닙니다. "
+            "차별화 포인트는 '무엇을 자동화하지 않을 것인가'에 대한 명확한 판단과, "
+            "학습 루프에 투입되는 퍼스트파티 데이터의 품질에서 갈립니다."
+        ),
+    },
+    {
+        "keywords": ["search", "seo", "geo", "generative", "content", "검색", "콘텐츠", "생성"],
+        "title": "생성형 검색 확산으로 콘텐츠 전략의 성공 기준이 달라진다",
+        "body": (
+            "AI 기반 생성형 답변이 검색 결과 상단을 차지하면서, 클릭 유도형 콘텐츠보다 "
+            "AI가 인용·요약할 수 있는 구조적 콘텐츠의 중요성이 높아지고 있습니다. "
+            "브랜드는 SEO 키워드 전략에 더해, 신뢰 출처로 인용되기 위한 전문성·구조화 데이터·권위 지표를 "
+            "동시에 관리해야 하는 이중 전략이 필요한 시점입니다."
+        ),
+    },
+    {
+        "keywords": ["brand", "customer", "experience", "loyalty", "브랜드", "고객", "경험", "충성"],
+        "title": "브랜드 차별화의 축이 기능에서 경험 설계로 이동 중",
+        "body": (
+            "제품·서비스 스펙 중심의 경쟁이 포화되면서, 고객 경험의 일관성과 감정적 연결이 "
+            "재구매·추천 행동을 결정하는 핵심 변수로 부상하고 있습니다. "
+            "AI 기반 개인화가 고도화될수록, 브랜드가 스스로 정의하는 가치와 톤앤매너의 일관성이 "
+            "알고리즘 의존도를 낮추는 장기적 자산이 됩니다."
+        ),
+    },
+    {
+        "keywords": ["data", "privacy", "cookie", "measurement", "analytics", "데이터", "개인정보", "측정"],
+        "title": "측정 패러다임 전환 — 퍼스트파티 데이터 기반 체계 구축이 시급하다",
+        "body": (
+            "서드파티 쿠키 종료와 플랫폼 개인정보 규제 강화로, 광고 성과 측정의 신뢰도가 구조적으로 낮아지고 있습니다. "
+            "MMM(마케팅 믹스 모델)·인크리멘탈리티 테스트·퍼스트파티 데이터 클린룸 등 "
+            "대안 측정 체계를 조기에 도입한 팀이 예산 최적화와 ROI 증명 모두에서 우위를 점하게 됩니다."
+        ),
+    },
+]
+
+
 def _fallback_three_insights(articles: List[dict]) -> List[dict]:
-    """Rule-based Korean 3 points when LLM is unavailable."""
+    """Keyword-matched strategic insights when LLM is unavailable."""
+    combined_text = " ".join(
+        ((a.get("title") or "") + " " + (a.get("content") or ""))[:300]
+        for a in articles[:15]
+    ).lower()
+
+    scored: list[tuple[int, dict]] = []
+    for tmpl in _INSIGHT_TEMPLATES:
+        score = sum(1 for kw in tmpl["keywords"] if kw in combined_text)
+        scored.append((score, tmpl))
+    scored.sort(key=lambda x: -x[0])
+
+    chosen = [t for _, t in scored[:3]]
+    while len(chosen) < 3:
+        chosen.append(_INSIGHT_TEMPLATES[len(chosen) % len(_INSIGHT_TEMPLATES)])
+
     out: List[dict] = []
-    for i, a in enumerate(articles[:3]):
-        tit = (a.get("title") or "")[:100]
-        sn = ((a.get("content") or "")[:200]).strip()
-        body = (
-            f"오늘 수집된 기사 중 「{tit}」 흐름이 마케팅·AI 담론에서 두드러집니다. "
-            f"{sn[:120]}…" if sn else f"「{tit}」 관련 동향이 시장 논의에 반영되고 있습니다."
-        )
+    for i, tmpl in enumerate(chosen[:3]):
+        # attach real article titles as evidence where possible
+        evid_arts = [
+            (a.get("title") or "")[:70]
+            for a in articles[:10]
+            if any(kw in ((a.get("title") or "") + (a.get("content") or "")).lower() for kw in tmpl["keywords"])
+        ][:2]
         out.append({
-            "title": f"포인트 {i + 1}: 핵심 이슈",
-            "body": body,
-            "evidence": [tit[:80]],
-        })
-    while len(out) < 3:
-        out.append({
-            "title": f"포인트 {len(out) + 1}",
-            "body": "오늘 수집된 뉴스를 바탕으로 마케팅 AI·디지털 전략 동향을 지속 모니터링하고 있습니다.",
-            "evidence": [],
+            "title": tmpl["title"],
+            "body": tmpl["body"],
+            "evidence": evid_arts,
         })
     return out[:3]
 
@@ -280,18 +342,21 @@ def _generate_three_marketing_insights(articles: List[dict]) -> List[dict]:
     payload = "\n".join(lines)
 
     prompt = (
-        "아래는 오늘(또는 해당일) 수집된 뉴스·기사 제목과 짧은 요약입니다.\n"
-        "이 목록에 실제로 등장한 내용만 근거로, 마케팅 담당자에게 유용한 인사이트를 정확히 3개 작성하세요.\n"
-        "각 포인트는 서로 다른 관점(예: 광고·미디어, AI·자동화, 브랜드·고객경험 등)을 다루세요.\n"
-        '반드시 JSON 배열만 출력(설명 금지): [{"title":"한 줄 제목(한국어)","body":"2~4문장(한국어, 구체적으로)","evidence":["목록에 있는 기사 제목1","기사 제목2"]}]\n'
-        "evidence에는 위 목록에 나온 제목 문자열과 일치하거나 일부 일치하는 기사만 넣으세요.\n\n"
+        "당신은 글로벌 마케팅 전략 컨설턴트입니다.\n"
+        "아래 기사 목록을 바탕으로, 마케팅 전문가에게 실질적으로 유용한 인사이트 3개를 작성하세요.\n\n"
+        "규칙:\n"
+        "- 단순 기사 요약이나 사실 나열 금지. 반드시 '이 상황이 마케터에게 무엇을 의미하는가' 해석 중심으로 작성.\n"
+        "- 각 포인트는 서로 다른 관점(예: AI 광고·자동화 / 플랫폼·미디어 변화 / 브랜드·고객전략).\n"
+        "- body는 3~4문장. 구체적이고 전략적인 언어로.\n"
+        "- evidence에는 위 목록에서 해당 인사이트의 근거가 되는 기사 제목(또는 출처명)을 1~3개.\n\n"
+        '출력: JSON 배열만(설명 없이): [{"title":"한 줄 인사이트 제목(한국어)","body":"3~4문장 해석(한국어)","evidence":["기사제목1","기사제목2"]}]\n\n'
         f"기사:\n{payload}"
     )
     try:
         res = _req.post(
             "http://localhost:11434/api/generate",
             json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=300,
+            timeout=60,
         )
         res.raise_for_status()
         raw = res.json().get("response", "").strip()
@@ -496,29 +561,34 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
 
 
 def _render_insights_html(insights: List[dict]) -> str:
-    """3 marketing insight points from today's articles (Korean)."""
+    """3 marketing insight rows — insight first, source tag at footer."""
     if not insights:
         return ""
-    cards = ""
+    rows = ""
     for idx, ins in enumerate(insights[:3], 1):
         title = escape(ins.get("title") or "")
         body = escape(ins.get("body") or "")
         evid = ins.get("evidence") or []
-        evid_html = ""
-        if evid:
-            parts = " · ".join(escape(str(e))[:90] for e in evid[:3])
-            evid_html = f'<p class="insight-evidence">연관 기사: {parts}</p>'
-        cards += f"""
-        <div class="digest-card insight-point">
-            <p class="digest-num">0{idx}</p>
-            <h3 class="digest-title">{title}</h3>
-            <p class="digest-summary">{body}</p>
-            {evid_html}
+        src_tags = "".join(
+            f'<span class="ins-src">{escape(str(e)[:60])}</span>'
+            for e in evid[:3] if e
+        )
+        src_html = (
+            f'<div class="ins-sources"><span class="ins-src-label">출처</span>{src_tags}</div>'
+            if src_tags else ""
+        )
+        rows += f"""
+        <div class="insight-row">
+            <span class="ins-num">0{idx}</span>
+            <div class="ins-body">
+                <h3 class="ins-title">{title}</h3>
+                <p class="ins-text">{body}</p>
+                {src_html}
+            </div>
         </div>"""
     return f"""
     <p class="section-label">오늘의 마케팅 인사이트</p>
-    <p class="section-sub">오늘 수집된 기사를 바탕으로 정리한 3가지 포인트입니다.</p>
-    <div class="digest-grid">{cards}</div>"""
+    <div class="insight-rows">{rows}</div>"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
