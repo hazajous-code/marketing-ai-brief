@@ -13,13 +13,14 @@ import requests
 logger = logging.getLogger(__name__)
 
 OLLAMA_BASE = "http://localhost:11434"
-OLLAMA_MODEL = "qwen2.5:7b"
+OLLAMA_MODEL = "gemma4:e2b"
 _GENERATE_URL = f"{OLLAMA_BASE}/api/generate"
 
 OLLAMA_OPTIONS: Dict[str, Any] = {
     "num_ctx": 4096,
-    "temperature": 0.3,
-    "top_p": 0.85,
+    "temperature": 0.5,
+    "top_p": 0.95,
+    "top_k": 64,
 }
 
 _session = requests.Session()
