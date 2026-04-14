@@ -209,31 +209,58 @@ ARXIV_FEEDS: Tuple[str, ...] = (
 
 # ── AI Tool launch feeds ──────────────────────────────────────────
 AI_TOOL_FEEDS: Tuple[str, ...] = (
+    # General AI tool launches
     "https://news.google.com/rss/search?q=%22AI+tool%22+OR+%22AI+launch%22+OR+%22new+AI+app%22&hl=en-US&gl=US&ceid=US:en",
     "https://news.google.com/rss/search?q=%22AI+startup%22+OR+%22AI+product%22+launch&hl=en-US&gl=US&ceid=US:en",
+    # Marketing-specific AI tools
+    "https://news.google.com/rss/search?q=%22AI+marketing+tool%22+OR+%22marketing+automation+AI%22+OR+%22AI+advertising+platform%22&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22AI+copywriting%22+OR+%22AI+content+creation%22+OR+%22AI+SEO+tool%22&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22AI+analytics%22+OR+%22AI+personalization%22+OR+%22martech+AI%22&hl=en-US&gl=US&ceid=US:en",
+    # Korean AI tools
     "https://news.google.com/rss/search?q=AI+%ED%88%B4+OR+AI+%EC%B6%9C%EC%8B%9C+OR+%EC%83%9D%EC%84%B1%ED%98%95AI+%EC%84%9C%EB%B9%84%EC%8A%A4&hl=ko&gl=KR&ceid=KR:ko",
+    "https://news.google.com/rss/search?q=%EB%A7%88%EC%BC%80%ED%8C%85+AI+%ED%88%B4+OR+%EA%B4%91%EA%B3%A0+AI+%EC%86%94%EB%A3%A8%EC%85%98&hl=ko&gl=KR&ceid=KR:ko",
+    # Direct RSS feeds
     "https://techcrunch.com/category/artificial-intelligence/feed/",
     "https://www.producthunt.com/feed",
     "https://bensbites.beehiiv.com/feed",
     "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
     "https://venturebeat.com/category/ai/feed/",
+    "https://martech.org/feed/",
+    "https://www.cmswire.com/feed/",
 )
 
 AI_TOOL_KEYWORDS: Tuple[str, ...] = (
+    # General launch signals
     "launch", "released", "launches", "releasing", "new tool",
     "new ai", "ai tool", "ai app", "ai agent", "ai assistant",
     "ai platform", "introduces", "announces", "unveiled",
     "now available", "open source", "beta", "gpt", "copilot",
+    # Marketing-specific signals
+    "marketing tool", "marketing platform", "ad tool", "advertising tool",
+    "content tool", "seo tool", "analytics tool", "crm ai",
+    "email marketing ai", "social media ai", "creative ai",
+    "copywriting ai", "personalization engine", "martech",
+    "campaign tool", "automation platform", "customer data",
+    # Korean signals
     "출시", "공개", "오픈", "베타", "론칭", "새로운", "서비스",
     "ai 툴", "ai 도구", "ai 서비스", "에이전트", "챗봇",
+    "마케팅 툴", "광고 자동화", "콘텐츠 생성", "분석 도구",
 )
 
 AI_TOOL_BRAND_SIGNALS: Tuple[str, ...] = (
+    # Global tech
     "openai", "google", "anthropic", "meta", "microsoft",
     "apple", "amazon", "nvidia", "midjourney", "stability",
     "runway", "notion", "canva", "adobe", "figma", "perplexity",
     "hugging face", "mistral", "cohere", "inflection",
-    "네이버", "카카오", "삼성", "lg", "sk",
+    # MarTech / AdTech brands
+    "hubspot", "salesforce", "mailchimp", "semrush", "ahrefs",
+    "jasper", "copy.ai", "writesonic", "hootsuite", "sprout social",
+    "buffer", "klaviyo", "braze", "amplitude", "mixpanel",
+    "segment", "twilio", "intercom", "drift", "optimizely",
+    # Korean brands
+    "네이버", "카카오", "삼성", "lg", "sk", "토스", "당근",
+    "뤼튼", "리턴제로", "업스테이지", "래블업",
 )
 
 # ── source priority tiers ────────────────────────────────────────────
@@ -546,7 +573,7 @@ def _ai_tool_score(title: str, content: str, source: str) -> int:
     return score
 
 
-def fetch_ai_tools_news(limit: int = 10, content_max: int = 520) -> List[Dict[str, Any]]:
+def fetch_ai_tools_news(limit: int = 12, content_max: int = 520) -> List[Dict[str, Any]]:
     """Collect recent AI tool launches from dedicated feeds."""
     now = datetime.now(timezone.utc)
     collected: List[Dict[str, Any]] = []
@@ -565,7 +592,7 @@ def fetch_ai_tools_news(limit: int = 10, content_max: int = 520) -> List[Dict[st
                 title = _strip_html(entry.get("title", "Untitled"))
                 link = (entry.get("link") or "").strip()
                 pub = _parse_date(entry)
-                if now - pub > timedelta(days=3):
+                if now - pub > timedelta(days=7):
                     continue
                 key = (_normalize_link(link), _normalize_title(title))
                 if key in seen:

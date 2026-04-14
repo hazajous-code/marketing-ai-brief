@@ -220,7 +220,7 @@ def _get_ai_tools_for_date(date_str: str) -> List[dict]:
 
 # ── LLM helpers ──────────────────────────────────────────────────────
 
-def _fetch_live_ai_tools(limit: int = 8) -> List[dict]:
+def _fetch_live_ai_tools(limit: int = 12) -> List[dict]:
     """Fetch AI tool news live (for index page which needs fresh data)."""
     try:
         from collect_news import fetch_ai_tools_news
@@ -431,32 +431,59 @@ def _generate_three_marketing_insights(articles: List[dict]) -> List[dict]:
     return _fallback_three_insights(articles)
 
 
+_TOOL_TRANS_CACHE = _PROJECT_ROOT / "data" / "ai_tools_translation_cache.json"
+
+
+def _load_tool_trans_cache() -> Dict[str, str]:
+    try:
+        if _TOOL_TRANS_CACHE.exists():
+            return json.loads(_TOOL_TRANS_CACHE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _save_tool_trans_cache(cache: Dict[str, str]) -> None:
+    _TOOL_TRANS_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    _TOOL_TRANS_CACHE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+
+
 def _localize_ai_tools(tools: List[dict]) -> List[dict]:
-    """Titles + summaries in Korean; richer text preserved."""
+    """Titles + summaries in Korean; uses disk cache for translated text."""
     if not tools:
         return []
-    try:
-        from translate import translate_batch
-    except Exception:
-        return [dict(t, title_ko=t.get("title", ""), summary_ko=(t.get("content") or "")[:520]) for t in tools]
 
-    titles = [(t.get("title") or "")[:240] for t in tools]
-    bodies = [((t.get("content") or ""))[:520] for t in tools]
-    t_ko = list(titles)
-    b_ko = list(bodies)
-    try:
-        if any(not _has_korean(x) for x in titles):
-            t_ko = translate_batch(titles, "ko")
-        if any(not _has_korean(x) for x in bodies):
-            b_ko = translate_batch(bodies, "ko")
-    except Exception as e:
-        logger.warning("AI tools batch translate failed: %s", e)
+    cache = _load_tool_trans_cache()
+    to_translate: List[str] = []
+    to_translate_keys: List[str] = []
+
+    for t in tools:
+        title = (t.get("title") or "")[:240]
+        body = ((t.get("content") or ""))[:400]
+        for text, suffix in [(title, ":title"), (body, ":body")]:
+            key = text.strip()
+            if key and not _has_korean(key) and key not in cache:
+                to_translate.append(key)
+                to_translate_keys.append(key)
+
+    if to_translate:
+        try:
+            from translate import translate_batch
+            translated = translate_batch(to_translate, "ko")
+            for k, v in zip(to_translate_keys, translated):
+                if v and v != k:
+                    cache[k] = v
+            _save_tool_trans_cache(cache)
+        except Exception as e:
+            logger.warning("AI tools batch translate failed: %s", e)
 
     out: List[dict] = []
-    for t, tk, bk in zip(tools, t_ko, b_ko):
+    for t in tools:
         d = dict(t)
-        d["title_ko"] = (tk or t.get("title") or "").strip()
-        d["summary_ko"] = (bk or t.get("content") or "").strip()[:560]
+        title = (t.get("title") or "")[:240].strip()
+        body = ((t.get("content") or ""))[:400].strip()
+        d["title_ko"] = cache.get(title, title)
+        d["summary_ko"] = cache.get(body, body)[:560]
         out.append(d)
     return out
 
@@ -1268,7 +1295,7 @@ def publish_index() -> Path:
     # AI tools: try archive first, then fetch live
     latest_ai_tools = _get_ai_tools_for_date(latest_date)
     if not latest_ai_tools:
-        latest_ai_tools = _fetch_live_ai_tools(limit=8)
+        latest_ai_tools = _fetch_live_ai_tools(limit=12)
 
     # YouTube videos: always fetch live for index page
     latest_youtube = _fetch_live_youtube(limit=8)

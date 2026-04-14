@@ -20,7 +20,7 @@ LANGUAGE_MAP = {
 _LANG_NAMES = {"ko": "Korean", "en": "English", "ja": "Japanese", "zh": "Chinese"}
 WHITESPACE_REGEX = re.compile(r"\s+")
 
-_MAX_BATCH = 8
+_MAX_BATCH = 4
 
 
 class TranslatorBackend(Protocol):
@@ -89,7 +89,7 @@ def _translate_chunk(texts: List[str], target_lang: str) -> List[str]:
         "Return ONLY the translations, one per line, keeping the same numbering.\n\n"
         f"{numbered}"
     )
-    raw = ollama_generate(prompt, timeout=60, retries=1)
+    raw = ollama_generate(prompt, timeout=120, retries=1)
     lines = [re.sub(r"^\d+\.\s*", "", ln).strip()
              for ln in raw.splitlines() if ln.strip()]
 
