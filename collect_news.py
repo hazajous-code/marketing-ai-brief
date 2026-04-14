@@ -424,6 +424,10 @@ _DOMAIN_NICE_NAMES: Dict[str, str] = {
     "platum.kr": "Platum",
     "www.aitimes.com": "AI타임스",
     "aitimes.com": "AI타임스",
+    "www.etnews.com": "전자신문",
+    "etnews.com": "전자신문",
+    "zdnet.co.kr": "ZDNet Korea",
+    "www.zdnet.co.kr": "ZDNet Korea",
 }
 
 
@@ -603,9 +607,12 @@ KR_AI_RADAR_FEEDS: Tuple[str, ...] = (
     "https://tech.kakao.com/feed",
     "https://www.digitaltoday.co.kr/rss/allArticle.xml",
     "https://www.aitimes.com/rss/allArticle.xml",
+    "https://www.etnews.com/rss/news.xml",
+    "https://zdnet.co.kr/rss/",
 )
 
-_KR_RADAR_NAVER_LINK_CAP = 1
+_KR_RADAR_NAVER_LINK_CAP = 0
+_KR_RADAR_NAVER_IN_TITLE_CAP = 1
 
 
 def _kr_radar_link_is_naver_host(link: str) -> bool:
@@ -614,13 +621,31 @@ def _kr_radar_link_is_naver_host(link: str) -> bool:
     except Exception:
         return False
 
+
+def _kr_radar_naver_penalty(blob: str, link: str) -> int:
+    """Push down Naver-centric items (corp churn) while keeping true AI + Naver product stories."""
+    pen = 0
+    b = blob or ""
+    n = b.count("네이버")
+    if n >= 1:
+        pen += 8
+    if n >= 2:
+        pen += 12
+    if n >= 3:
+        pen += 15
+    if _kr_radar_link_is_naver_host(link):
+        pen += 25
+    return pen
+
+
 _KR_AI_RADAR_PAT = re.compile(
     r"인공지능|생성형|생성\s*형|\bAI\b|에이아이|ChatGPT|챗지피티|GPT|"
     r"LLM|거대\s*언어|언어\s*모델|딥러닝|추론|파운데이션|파인튜닝|"
     r"클로바|CLOVA|하이퍼클로바|HyperCLOVA|"
     r"오픈\s*AI|OpenAI|Anthropic|클로드|Llama|라마|Mistral|미스트랄|"
     r"AI마케|마케팅AI|마케팅\s*AI|애드테크|"
-    r"네이버|카카오|LG|삼성|SK텔레콤|SKT|"
+    r"네이버\s*(클로바|CLOVA|AI|LLM|생성형|검색|클라우드|웍스|지도|파이낸셜|페이)|"
+    r"카카오|LG|삼성|SK텔레콤|SKT|"
     r"GPU|NPU|반도체|LLMOps|에이전트|Agent",
     re.I,
 )
@@ -730,7 +755,7 @@ def _kr_radar_marketing_priority(blob: str) -> int:
 
 
 def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[Dict[str, Any]]:
-    """Headlines from Korean tech/biz RSS; AI-related gate, then marketing keyword priority + recency."""
+    """Korean tech/biz RSS: AI gate, marketing-first sort, Naver noise penalty, diversify sources."""
     if limit <= 0:
         return []
 
@@ -769,6 +794,8 @@ def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[D
 
                 korean = _is_korean(title + content)
                 rank_blob = f"{title} {content}"
+                mkt = _kr_radar_marketing_priority(rank_blob)
+                pen = _kr_radar_naver_penalty(rank_blob, link)
                 collected.append({
                     "id": _normalize_link(link) or f"{_normalize_title(title)}-{pub.isoformat()}",
                     "title": title,
@@ -779,26 +806,32 @@ def fetch_kr_ai_radar_updates(limit: int = 12, max_age_days: int = 12) -> List[D
                     "content": content[:400],
                     "is_new": now - pub <= timedelta(hours=36),
                     "lang": "ko" if korean else "en",
-                    "_mkt_rank": _kr_radar_marketing_priority(rank_blob),
+                    "_sort": mkt - pen,
                 })
             except Exception:
                 continue
 
-    # Marketing-related first, then newest within same tier
+    # Marketing + low Naver-noise first, then recency
     collected.sort(
-        key=lambda x: (-x.get("_mkt_rank", 0), -x["published_at"].timestamp())
+        key=lambda x: (-x.get("_sort", 0), -x["published_at"].timestamp())
     )
     out: List[Dict[str, Any]] = []
     naver_links = 0
+    naver_in_title = 0
     for item in collected:
         if len(out) >= limit:
             break
         link = (item.get("link") or "").strip()
+        tit = item.get("title") or ""
         if _kr_radar_link_is_naver_host(link):
             if naver_links >= _KR_RADAR_NAVER_LINK_CAP:
                 continue
             naver_links += 1
-        item.pop("_mkt_rank", None)
+        if "네이버" in tit:
+            if naver_in_title >= _KR_RADAR_NAVER_IN_TITLE_CAP:
+                continue
+            naver_in_title += 1
+        item.pop("_sort", None)
         out.append(item)
     return out
 
