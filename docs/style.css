@@ -206,6 +206,34 @@ a:hover { color: var(--accent-hover); }
     flex-wrap: wrap;
 }
 
+/* ── tool directory (category view) ─────────── */
+.tool-directory {
+    margin-bottom: 32px;
+}
+.tool-category-section {
+    margin-bottom: 24px;
+}
+.tool-cat-header {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tool-cat-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+}
+
 /* ── badges ───────────────────────────────── */
 .badge {
     font-size: 9px;

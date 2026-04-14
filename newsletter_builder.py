@@ -431,6 +431,200 @@ def _generate_three_marketing_insights(articles: List[dict]) -> List[dict]:
     return _fallback_three_insights(articles)
 
 
+# ── AI Tool Category System ──────────────────────────────────────────
+
+_AI_TOOL_DB = _PROJECT_ROOT / "data" / "ai_tools_db.json"
+
+_TOOL_CATEGORIES = {
+    "coding": {
+        "label": "코딩 · 개발",
+        "icon": "💻",
+        "keywords": ["code", "coding", "developer", "github", "copilot", "cursor",
+                     "ide", "programming", "devtool", "api", "sdk", "debug",
+                     "vscode", "코딩", "개발", "프로그래밍", "openclaw"],
+    },
+    "video": {
+        "label": "영상 · 비디오",
+        "icon": "🎬",
+        "keywords": ["video", "film", "clip", "animation", "editing",
+                     "sora", "runway", "pika", "kling", "영상", "비디오",
+                     "동영상", "편집", "영화"],
+    },
+    "image": {
+        "label": "이미지 · 디자인",
+        "icon": "🎨",
+        "keywords": ["image", "design", "photo", "illustration", "graphic",
+                     "midjourney", "dall-e", "stable diffusion", "canva",
+                     "figma", "adobe", "이미지", "디자인", "그래픽"],
+    },
+    "music": {
+        "label": "음악 · 오디오",
+        "icon": "🎵",
+        "keywords": ["music", "audio", "sound", "voice", "song", "podcast",
+                     "suno", "udio", "음악", "오디오", "음성", "노래"],
+    },
+    "writing": {
+        "label": "글쓰기 · 콘텐츠",
+        "icon": "✍️",
+        "keywords": ["writing", "copywriting", "content", "blog", "article",
+                     "text", "editor", "document", "jasper", "copy.ai",
+                     "writesonic", "notion", "글쓰기", "콘텐츠", "문서"],
+    },
+    "marketing": {
+        "label": "마케팅 · 광고",
+        "icon": "📈",
+        "keywords": ["marketing", "advertising", "ad ", "ads ", "campaign",
+                     "seo", "analytics", "crm", "email marketing", "social media",
+                     "hubspot", "salesforce", "마케팅", "광고", "분석"],
+    },
+    "productivity": {
+        "label": "생산성 · 업무",
+        "icon": "⚡",
+        "keywords": ["productivity", "workflow", "automation", "assistant",
+                     "agent", "schedule", "project", "task", "meeting",
+                     "생산성", "업무", "자동화", "에이전트", "비서"],
+    },
+    "research": {
+        "label": "리서치 · 학습",
+        "icon": "🔬",
+        "keywords": ["research", "study", "education", "learning", "search",
+                     "perplexity", "scholar", "academic", "student",
+                     "리서치", "연구", "학습", "검색", "교육"],
+    },
+    "finance": {
+        "label": "금융 · 핀테크",
+        "icon": "💰",
+        "keywords": ["finance", "fintech", "trading", "investment", "banking",
+                     "payment", "금융", "핀테크", "투자", "은행", "증권"],
+    },
+}
+
+
+def _classify_tool_category(title: str, content: str) -> str:
+    """Classify an AI tool into a category based on title + content keywords."""
+    text = (title + " " + content).lower()
+    scores: Dict[str, int] = {}
+    for cat, info in _TOOL_CATEGORIES.items():
+        score = sum(1 for kw in info["keywords"] if kw in text)
+        if score > 0:
+            scores[cat] = score
+    if scores:
+        return max(scores, key=scores.get)
+    return "productivity"
+
+
+def _load_tool_db() -> Dict[str, dict]:
+    try:
+        if _AI_TOOL_DB.exists():
+            return json.loads(_AI_TOOL_DB.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _save_tool_db(db: Dict[str, dict]) -> None:
+    _AI_TOOL_DB.parent.mkdir(parents=True, exist_ok=True)
+    _AI_TOOL_DB.write_text(json.dumps(db, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _merge_tools_to_db(tools: List[dict]) -> Dict[str, dict]:
+    """Merge new tools into the persistent DB. Returns the full DB."""
+    db = _load_tool_db()
+    for t in tools:
+        tool_id = t.get("id") or t.get("link", "")
+        if not tool_id:
+            continue
+        if tool_id not in db:
+            cat = _classify_tool_category(
+                t.get("title_ko") or t.get("title", ""),
+                t.get("summary_ko") or t.get("content", ""),
+            )
+            db[tool_id] = {
+                "title": t.get("title_ko") or t.get("title", ""),
+                "link": t.get("link", ""),
+                "desc": (t.get("summary_ko") or t.get("content", ""))[:400],
+                "source": t.get("source", ""),
+                "category": cat,
+                "published_at": t.get("published_at", ""),
+                "is_new": t.get("is_new", False),
+                "added_date": datetime.now().strftime("%Y-%m-%d"),
+            }
+    _save_tool_db(db)
+    return db
+
+
+def _render_ai_tools_by_category(ai_tools: List[dict], tool_db: Dict[str, dict]) -> str:
+    """Render AI tools grouped by category — all on one page."""
+    if not ai_tools and not tool_db:
+        return ""
+
+    for t in ai_tools:
+        tool_id = t.get("id") or t.get("link", "")
+        if tool_id and tool_id not in tool_db:
+            cat = _classify_tool_category(
+                t.get("title_ko") or t.get("title", ""),
+                t.get("summary_ko") or t.get("content", ""),
+            )
+            tool_db[tool_id] = {
+                "title": t.get("title_ko") or t.get("title", ""),
+                "link": t.get("link", ""),
+                "desc": (t.get("summary_ko") or t.get("content", ""))[:400],
+                "source": t.get("source", ""),
+                "category": cat,
+                "published_at": t.get("published_at", ""),
+                "is_new": t.get("is_new", False),
+            }
+
+    by_cat: Dict[str, List[dict]] = {}
+    for tool_id, tool in tool_db.items():
+        cat = tool.get("category", "productivity")
+        by_cat.setdefault(cat, []).append(tool)
+
+    for cat in by_cat:
+        by_cat[cat].sort(key=lambda x: x.get("published_at", ""), reverse=True)
+
+    new_tool_ids = {(t.get("id") or t.get("link", "")) for t in ai_tools}
+
+    sections = ""
+    ordered_cats = [c for c in _TOOL_CATEGORIES if c in by_cat]
+    for leftover in by_cat:
+        if leftover not in ordered_cats:
+            ordered_cats.append(leftover)
+
+    total_tools = sum(len(v) for v in by_cat.values())
+
+    for cat in ordered_cats:
+        tools_in_cat = by_cat[cat]
+        info = _TOOL_CATEGORIES.get(cat, {"label": cat, "icon": "🔧"})
+        cards = ""
+        for tool in tools_in_cat:
+            title = escape(tool.get("title", ""))
+            link = escape(tool.get("link", "#"))
+            desc = escape(tool.get("desc", ""))
+            source = escape(tool.get("source", ""))
+            tool_id = tool.get("link", "")
+            is_new = tool_id in new_tool_ids or tool.get("is_new", False)
+            new_badge = '<span class="badge badge-new">NEW</span>' if is_new else ""
+            cards += f"""
+            <div class="ai-tool-card">
+                <p class="ai-tool-title"><a href="{link}" target="_blank">{title}</a></p>
+                <p class="ai-tool-desc">{desc}</p>
+                <div class="ai-tool-meta"><span class="badge badge-tool">{escape(info['icon'])} {escape(info['label'])}</span>{new_badge}<span>{source}</span></div>
+            </div>"""
+        sections += f"""
+        <div class="tool-category-section">
+            <h3 class="tool-cat-header">{info['icon']} {escape(info['label'])} <span class="tool-cat-count">{len(tools_in_cat)}</span></h3>
+            <div class="ai-tools-grid">{cards}</div>
+        </div>"""
+
+    return f"""
+    <div class="ai-tools-header">
+        <span class="ai-tools-label">AI 툴 디렉토리 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">총 {total_tools}개</span></span>
+        <div class="ai-tools-line"></div>
+    </div>
+    <div class="tool-directory">{sections}</div>"""
+
+
 _TOOL_TRANS_CACHE = _PROJECT_ROOT / "data" / "ai_tools_translation_cache.json"
 
 
@@ -947,11 +1141,11 @@ def build_daily_page(
         <span class="nav-center"><a href="../index.html">전체 목록</a></span>
         {nav_right}
     </nav>
-    {_subscribe_banner_html()}
     {_render_ai_tools_html(ai_tools_ko)}
     {_render_insights_html(insights)}
     {yt_section}
     {_render_article_cards(articles_ko)}
+    {_subscribe_banner_html()}
     <footer class="footer">
         <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
         <p><a href="../index.html">전체 목록</a></p>
@@ -979,13 +1173,15 @@ def build_index_page(
 
     subscribe_html = _subscribe_banner_html()
 
-    ai_tools_html = _render_ai_tools_html(ai_tools_ko)
+    tool_db = _merge_tools_to_db(ai_tools_ko)
+    ai_tools_html = _render_ai_tools_by_category(ai_tools_ko, tool_db)
     insights_html = _render_insights_html(latest_insights)
     yt_html = _render_youtube_section(youtube_videos or [])
     articles_html = _render_article_cards(articles_ko, limit=9)
 
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)
-    tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
+    tool_count = len(tool_db) or len(ai_tools_ko)
+    tool_line = f" · AI 툴 {tool_count}건" if tool_count else ""
 
     body = f"""
     <header class="masthead">
@@ -996,12 +1192,12 @@ def build_index_page(
             <p class="masthead-count">기사 {len(latest_articles)}건{tool_line}</p>
         </div>
     </header>
-    {subscribe_html}
     {ai_tools_html}
     {insights_html}
     {yt_html}
     {articles_html}
     {tabs_html}
+    {subscribe_html}
     <footer class="footer">
         <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
     </footer>"""
