@@ -618,6 +618,75 @@ a:hover { color: var(--accent-hover); }
     border-top: 1px solid var(--border);
 }
 
+/* ── YouTube region badges ─────────────────── */
+.yt-region-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: .5px;
+}
+.yt-region-gl { background: #1a73e8; color: #fff; }
+.yt-region-kr { background: #0d47a1; color: #fff; }
+
+/* ── YouTube sub-labels (해외/국내) ──────────── */
+.yt-sub-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 16px 0 8px;
+    letter-spacing: .3px;
+}
+
+/* ── YouTube summary card ──────────────────── */
+.yt-summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid #FF0000;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 18px;
+}
+.yt-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.yt-summary-icon { font-size: 28px; }
+.yt-summary-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+.yt-summary-topics {
+    font-size: 11px;
+    color: var(--accent-text, var(--accent));
+    margin: 2px 0 0;
+    font-weight: 600;
+}
+.yt-summary-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    line-height: 1.6;
+}
+.yt-summary-list {
+    margin: 0;
+    padding-left: 18px;
+}
+.yt-summary-list li {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+.yt-summary-list li strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 /* ── footer ───────────────────────────────── */
 .footer {
     text-align: center;

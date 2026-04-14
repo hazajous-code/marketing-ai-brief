@@ -593,17 +593,27 @@ def fetch_ai_tools_news(limit: int = 10, content_max: int = 520) -> List[Dict[st
 
 
 # ── YouTube AI creator collector ──────────────────────────────────────
-# Channel IDs for popular AI/tech YouTubers
-YOUTUBE_AI_CHANNELS: Dict[str, str] = {
-    "Fireship":          "UCsBjURrPoezykLs9EqgamOA",
-    "Two Minute Papers": "UCbfYPyITQ-7l4upoX8nvctg",
-    "Lex Fridman":       "UCSHZKyawb77ixDdsGog4iWA",
-    "Yannic Kilcher":    "UCZHmQk67mSJgfCCTn7xBfew",
-    "Matt Wolfe":        "UCbmNph6atAoGfqLoCL_duAg",
-    "AI Explained":      "UCNJ1Ymd5yFuUPtn21xtRbbw",
-    "Wes Roth":          "UCx3-JSNXhOJn0RVFbcZ0KVA",
-    "The AI Breakdown":  "UCq80GDpRHdFHosVEBMCpKlA",
-}
+# (channel_name, channel_id, region)
+YOUTUBE_AI_CHANNELS_GLOBAL: List[Tuple[str, str, str]] = [
+    # Global
+    ("Fireship",          "UCsBjURrPoezykLs9EqgamOA", "global"),
+    ("Two Minute Papers", "UCbfYPyITQ-7l4upoX8nvctg", "global"),
+    ("Lex Fridman",       "UCSHZKyawb77ixDdsGog4iWA", "global"),
+    ("Yannic Kilcher",    "UCZHmQk67mSJgfCCTn7xBfew", "global"),
+    ("Matt Wolfe",        "UCbmNph6atAoGfqLoCL_duAg", "global"),
+    ("AI Explained",      "UCNJ1Ymd5yFuUPtn21xtRbbw", "global"),
+    ("Wes Roth",          "UCx3-JSNXhOJn0RVFbcZ0KVA", "global"),
+    ("The AI Breakdown",  "UCq80GDpRHdFHosVEBMCpKlA", "global"),
+    # Korea
+    ("테크몽 Techmong",    "UCtm0cSECNR04lkhRsiE4pjg", "kr"),
+    ("노마드 코더 Nomad Coders", "UCUpJs89fSBXNolQGOYKn0YQ", "kr"),
+    ("조코딩 JoCoding",    "UCQNE2JmbasNYbjGAcuBiRRg", "kr"),
+    ("AI 리더 AILeader",   "UCzUNY-_QDyEnZ97-VgLcMVQ", "kr"),
+    ("안될공학 - IT",       "UCVGsi0jm_IhpICcQSxab3qA", "kr"),
+    ("셜록현준",            "UCjNaSmJ8fncLX-X5d0lVx5A", "kr"),
+    ("AI 프렌즈",          "UCdMBMJdimVjfjHuy5VhJ4gg", "kr"),
+    ("캐치딥 CatchDeep",   "UCnxSiqA4PUbJMn7RyNldXPg", "kr"),
+]
 
 
 def _yt_video_id(link: str) -> str:
@@ -630,30 +640,33 @@ def _clean_yt_description(text: str) -> str:
     return cleaned[:400] + ("…" if len(cleaned) > 400 else "")
 
 
-def fetch_youtube_ai_news(limit: int = 8, days: int = 14) -> List[Dict[str, Any]]:
-    """Fetch recent videos from curated AI/marketing YouTube channels via RSS."""
+def fetch_youtube_ai_news(limit: int = 16, days: int = 14) -> List[Dict[str, Any]]:
+    """Fetch recent videos from curated AI/marketing YouTube channels via RSS.
+
+    Each video includes a `region` field: "global" or "kr".
+    """
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=days)
     feed_urls = [
-        (channel, f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}")
-        for channel, cid in YOUTUBE_AI_CHANNELS.items()
+        (name, f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}", region)
+        for name, cid, region in YOUTUBE_AI_CHANNELS_GLOBAL
     ]
 
-    url_entries: List[tuple[str, str, List[Any]]] = []
-    with ThreadPoolExecutor(max_workers=min(8, len(feed_urls))) as pool:
+    url_entries: List[tuple[str, str, str, List[Any]]] = []
+    with ThreadPoolExecutor(max_workers=min(12, len(feed_urls))) as pool:
         future_to_meta = {
-            pool.submit(_fetch_entries, url): (channel, url)
-            for channel, url in feed_urls
+            pool.submit(_fetch_entries, url): (name, url, region)
+            for name, url, region in feed_urls
         }
         for future in as_completed(future_to_meta):
-            channel, url = future_to_meta[future]
-            url_entries.append((channel, url, future.result()))
+            name, url, region = future_to_meta[future]
+            url_entries.append((name, url, region, future.result()))
 
     collected: List[Dict[str, Any]] = []
     seen: set = set()
 
-    for channel, url, entries in url_entries:
-        for entry in entries[:5]:  # newest 5 per channel
+    for channel, url, region, entries in url_entries:
+        for entry in entries[:5]:
             try:
                 title = _strip_html(entry.get("title", "Untitled"))
                 link = (entry.get("link") or "").strip()
@@ -688,7 +701,8 @@ def fetch_youtube_ai_news(limit: int = 8, days: int = 14) -> List[Dict[str, Any]
                     "thumbnail": thumbnail,
                     "video_id": video_id,
                     "is_new": now - pub <= timedelta(hours=48),
-                    "lang": "en",
+                    "lang": "ko" if region == "kr" else "en",
+                    "region": region,
                     "is_youtube": True,
                 })
             except Exception:

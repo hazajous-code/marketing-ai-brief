@@ -234,8 +234,8 @@ def _fetch_live_ai_tools(limit: int = 8) -> List[dict]:
         return []
 
 
-def _fetch_live_youtube(limit: int = 8) -> List[dict]:
-    """Fetch recent YouTube AI creator videos."""
+def _fetch_live_youtube(limit: int = 16) -> List[dict]:
+    """Fetch recent YouTube AI creator videos (global + kr)."""
     try:
         from collect_news import fetch_youtube_ai_news
         videos = fetch_youtube_ai_news(limit=limit, days=14)
@@ -656,52 +656,123 @@ def _render_insights_html(insights: List[dict]) -> str:
     <div class="insight-cards">{cards}</div>"""
 
 
-def _render_youtube_cards(videos: List[dict]) -> str:
-    """YouTube video cards with thumbnail, channel badge, title, description."""
+def _yt_card_html(v: dict) -> str:
+    """Single YouTube video card HTML."""
+    title = escape(v.get("title") or "")
+    link = escape(v.get("link") or "#")
+    channel = escape(v.get("source") or "YouTube")
+    desc = escape(v.get("content") or "")
+    thumb = escape(v.get("thumbnail") or "")
+    date_str = escape((v.get("published_str") or "")[:10])
+    new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
+    region = v.get("region", "global")
+    region_badge = (
+        '<span class="yt-region-badge yt-region-kr">KR</span>'
+        if region == "kr"
+        else '<span class="yt-region-badge yt-region-gl">EN</span>'
+    )
+
+    thumb_html = (
+        f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
+        f'onerror="this.parentElement.style.display=\'none\'">'
+        if thumb else ""
+    )
+    play_svg = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' if thumb else ""
+    thumb_section = (
+        f'<a href="{link}" target="_blank" class="yt-thumb-wrap">'
+        f'{thumb_html}<div class="yt-play-icon">{play_svg}</div></a>'
+    ) if thumb else ""
+
+    return f"""
+    <div class="yt-card">
+        {thumb_section}
+        <div class="yt-body">
+            <div class="yt-channel-row">
+                <span class="yt-badge">▶ YouTube</span>
+                {region_badge}
+                <span class="yt-channel-name">{channel}</span>
+                {new_badge}
+            </div>
+            <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
+            <p class="yt-desc">{desc}</p>
+            <p class="yt-meta">{date_str}</p>
+        </div>
+    </div>"""
+
+
+def _yt_summary_html(videos: List[dict]) -> str:
+    """Generate a summary card from YouTube video titles — rule-based (no LLM)."""
+    if len(videos) < 2:
+        return ""
+    global_vids = [v for v in videos if v.get("region") != "kr"]
+    kr_vids = [v for v in videos if v.get("region") == "kr"]
+
+    bullets = []
+    for v in (global_vids + kr_vids)[:6]:
+        channel = escape(v.get("source", ""))
+        title = escape(v.get("title", ""))
+        bullets.append(f"<li><strong>{channel}</strong> — {title}</li>")
+    bullet_html = "\n".join(bullets)
+
+    topics: list[str] = []
+    all_text = " ".join((v.get("title") or "") + " " + (v.get("content") or "") for v in videos).lower()
+    kw_map = {
+        "AI 에이전트 / 자율 실행": ["agent", "agentic", "autonomous", "에이전트"],
+        "LLM 신규 모델 출시": ["gpt", "claude", "gemini", "llama", "모델", "model"],
+        "AI 도구 & 생산성": ["tool", "productivity", "copilot", "workflow", "도구", "생산성"],
+        "AI 규제 & 윤리": ["regulation", "safety", "alignment", "규제", "윤리", "안전"],
+        "AI 코딩 & 개발": ["coding", "cursor", "vscode", "코딩", "개발", "프로그래밍"],
+        "AI 비즈니스 트렌드": ["startup", "funding", "market", "business", "비즈니스", "스타트업"],
+    }
+    for label, kws in kw_map.items():
+        if any(kw in all_text for kw in kws):
+            topics.append(label)
+    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
+
+    return f"""
+    <div class="yt-summary-card">
+        <div class="yt-summary-header">
+            <span class="yt-summary-icon">📺</span>
+            <div>
+                <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
+                <p class="yt-summary-topics">{topics_text}</p>
+            </div>
+        </div>
+        <p class="yt-summary-desc">최근 AI 크리에이터들이 다루고 있는 주요 영상입니다.</p>
+        <ul class="yt-summary-list">{bullet_html}</ul>
+    </div>"""
+
+
+def _render_youtube_section(videos: List[dict]) -> str:
+    """YouTube section: summary + global/kr split grids."""
     if not videos:
         return ""
-    cards = ""
-    for v in videos[:8]:
-        title = escape(v.get("title") or "")
-        link = escape(v.get("link") or "#")
-        channel = escape(v.get("source") or "YouTube")
-        desc = escape(v.get("content") or "")
-        thumb = escape(v.get("thumbnail") or "")
-        date_str = escape((v.get("published_str") or "")[:10])
-        new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
 
-        thumb_html = (
-            f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
-            f'onerror="this.parentElement.style.display=\'none\'">'
-            if thumb else ""
-        )
-        play_svg = (
-            '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
-            if thumb else ""
-        )
-        thumb_section = f"""
-        <a href="{link}" target="_blank" class="yt-thumb-wrap">
-            {thumb_html}
-            <div class="yt-play-icon">{play_svg}</div>
-        </a>""" if thumb else ""
+    global_vids = [v for v in videos if v.get("region") != "kr"][:8]
+    kr_vids = [v for v in videos if v.get("region") == "kr"][:8]
 
-        cards += f"""
-        <div class="yt-card">
-            {thumb_section}
-            <div class="yt-body">
-                <div class="yt-channel-row">
-                    <span class="yt-badge">▶ YouTube</span>
-                    <span class="yt-channel-name">{channel}</span>
-                    {new_badge}
-                </div>
-                <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
-                <p class="yt-desc">{desc}</p>
-                <p class="yt-meta">{date_str}</p>
-            </div>
-        </div>"""
+    summary = _yt_summary_html(videos)
+
+    global_cards = "".join(_yt_card_html(v) for v in global_vids)
+    kr_cards = "".join(_yt_card_html(v) for v in kr_vids)
+
+    global_section = ""
+    if global_cards:
+        global_section = f"""
+        <p class="yt-sub-label">🌎 해외 크리에이터</p>
+        <div class="yt-grid">{global_cards}</div>"""
+
+    kr_section = ""
+    if kr_cards:
+        kr_section = f"""
+        <p class="yt-sub-label">🇰🇷 국내 크리에이터</p>
+        <div class="yt-grid">{kr_cards}</div>"""
+
     return f"""
     <p class="section-label">AI 크리에이터 영상</p>
-    <div class="yt-grid">{cards}</div>"""
+    {summary}
+    {global_section}
+    {kr_section}"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
@@ -827,7 +898,7 @@ def build_daily_page(
     nav_left = f'<a href="{prev_date}.html">&larr; {prev_date}</a>' if prev_date else '<span></span>'
     nav_right = f'<a href="{next_date}.html">{next_date} &rarr;</a>' if next_date else '<span></span>'
     tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
-    yt_section = _render_youtube_cards(youtube_videos or [])
+    yt_section = _render_youtube_section(youtube_videos or [])
 
     body = f"""
     <header class="masthead">
@@ -877,7 +948,7 @@ def build_index_page(
 
     ai_tools_html = _render_ai_tools_html(ai_tools_ko)
     insights_html = _render_insights_html(latest_insights)
-    yt_html = _render_youtube_cards(youtube_videos or [])
+    yt_html = _render_youtube_section(youtube_videos or [])
     articles_html = _render_article_cards(articles_ko, limit=9)
 
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)

@@ -436,6 +436,30 @@ NEWSLETTER_CSS = """
 }
 .yt-meta { font-size: 10.5px; color: var(--text-faint); padding-top: 6px; border-top: 1px solid var(--border); }
 
+/* YouTube region badges */
+.yt-region-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px; letter-spacing: .5px; }
+.yt-region-gl { background: #1a73e8; color: #fff; }
+.yt-region-kr { background: #0d47a1; color: #fff; }
+.yt-sub-label {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    margin: 16px 0 8px; letter-spacing: .3px;
+}
+
+/* YouTube summary card */
+.yt-summary-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 4px solid #FF0000; border-radius: var(--radius);
+    padding: 18px 22px; margin-bottom: 14px;
+}
+.yt-summary-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.yt-summary-icon { font-size: 24px; }
+.yt-summary-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.yt-summary-topics { font-size: 11px; color: var(--accent-text); margin: 2px 0 0; font-weight: 600; }
+.yt-summary-desc { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 8px; line-height: 1.6; }
+.yt-summary-list { margin: 0; padding-left: 18px; }
+.yt-summary-list li { font-size: 12px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 2px; }
+.yt-summary-list li strong { color: var(--text-primary); font-weight: 600; }
+
 /* ── divider ───────────────────────────────── */
 .section-divider {
     border: none;
@@ -1122,7 +1146,7 @@ def render_daily_digest(items: List[dict]) -> None:
 def _get_youtube_videos() -> List[dict]:
     try:
         from collect_news import fetch_youtube_ai_news
-        videos = fetch_youtube_ai_news(limit=8, days=14)
+        videos = fetch_youtube_ai_news(limit=16, days=14)
         for v in videos:
             if hasattr(v.get("published_at"), "isoformat"):
                 v["published_at"] = v["published_at"].isoformat()
@@ -1131,15 +1155,50 @@ def _get_youtube_videos() -> List[dict]:
         return []
 
 
-def render_youtube_section() -> None:
-    videos = _get_youtube_videos()
+def _render_yt_summary(videos: List[dict]) -> None:
+    """Summary card for YouTube section."""
+    if len(videos) < 2:
+        return
+    bullets = ""
+    for v in videos[:6]:
+        channel = escape(v.get("source", ""))
+        title = escape(v.get("title", ""))
+        bullets += f"<li><strong>{channel}</strong> — {title}</li>\n"
+
+    all_text = " ".join((v.get("title") or "") + " " + (v.get("content") or "") for v in videos).lower()
+    kw_map = {
+        "AI 에이전트 / 자율 실행": ["agent", "agentic", "autonomous", "에이전트"],
+        "LLM 신규 모델": ["gpt", "claude", "gemini", "llama", "모델", "model"],
+        "AI 도구 & 생산성": ["tool", "productivity", "copilot", "도구", "생산성"],
+        "AI 코딩 & 개발": ["coding", "cursor", "vscode", "코딩", "개발"],
+        "AI 비즈니스": ["startup", "funding", "market", "비즈니스", "스타트업"],
+    }
+    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
+    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
+
+    st.markdown(f"""
+    <div class="yt-summary-card">
+        <div class="yt-summary-header">
+            <span class="yt-summary-icon">📺</span>
+            <div>
+                <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
+                <p class="yt-summary-topics">{topics_text}</p>
+            </div>
+        </div>
+        <p class="yt-summary-desc">최근 AI 크리에이터들이 다루고 있는 주요 영상입니다.</p>
+        <ul class="yt-summary-list">{bullets}</ul>
+    </div>""", unsafe_allow_html=True)
+
+
+def _render_yt_grid(videos: List[dict], label: str) -> None:
+    """Render a group of YouTube cards with a sub-label."""
     if not videos:
         return
-    st.markdown('<p class="section-lbl">AI 크리에이터 영상</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="yt-sub-label">{label}</p>', unsafe_allow_html=True)
     for row_start in range(0, len(videos), 3):
-        row_videos = videos[row_start:row_start + 3]
-        cols = st.columns(len(row_videos), gap="medium")
-        for col_idx, v in enumerate(row_videos):
+        row = videos[row_start:row_start + 3]
+        cols = st.columns(len(row), gap="medium")
+        for col_idx, v in enumerate(row):
             title = escape(v.get("title") or "")
             link = escape(v.get("link") or "#")
             channel = escape(v.get("source") or "YouTube")
@@ -1147,6 +1206,12 @@ def render_youtube_section() -> None:
             thumb = v.get("thumbnail") or ""
             date_str = escape((v.get("published_str") or "")[:10])
             new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
+            region = v.get("region", "global")
+            region_badge = (
+                '<span class="yt-region-badge yt-region-kr">KR</span>'
+                if region == "kr"
+                else '<span class="yt-region-badge yt-region-gl">EN</span>'
+            )
             thumb_html = (
                 f'<a href="{link}" target="_blank">'
                 f'<img class="yt-thumb" src="{escape(thumb)}" alt="{title}" '
@@ -1159,6 +1224,7 @@ def render_youtube_section() -> None:
                     <div class="yt-body">
                         <div class="yt-channel-row">
                             <span class="yt-badge">▶ YouTube</span>
+                            {region_badge}
                             <span class="yt-channel-name">{channel}</span>
                             {new_badge}
                         </div>
@@ -1167,6 +1233,19 @@ def render_youtube_section() -> None:
                         <p class="yt-meta">{date_str}</p>
                     </div>
                 </div>""", unsafe_allow_html=True)
+
+
+def render_youtube_section() -> None:
+    videos = _get_youtube_videos()
+    if not videos:
+        return
+    global_vids = [v for v in videos if v.get("region") != "kr"][:8]
+    kr_vids = [v for v in videos if v.get("region") == "kr"][:8]
+
+    st.markdown('<p class="section-lbl">AI 크리에이터 영상</p>', unsafe_allow_html=True)
+    _render_yt_summary(videos)
+    _render_yt_grid(global_vids, "🌎 해외 크리에이터")
+    _render_yt_grid(kr_vids, "🇰🇷 국내 크리에이터")
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 
