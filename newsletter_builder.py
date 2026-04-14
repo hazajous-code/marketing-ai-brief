@@ -573,14 +573,9 @@ _AI_TOOL_DIRECTORY: List[Dict[str, str]] = [
 ]
 
 
-def _render_tool_directory_table() -> str:
-    """Render a compact table of well-known AI tools by category."""
-    by_cat: Dict[str, list] = {}
-    for t in _AI_TOOL_DIRECTORY:
-        by_cat.setdefault(t["cat"], []).append(t)
-
+def _tool_dir_tbody_for_cats(by_cat: Dict[str, list], cat_keys: List[str]) -> str:
     rows = ""
-    for cat_key in _TOOL_CATEGORIES:
+    for cat_key in cat_keys:
         tools = by_cat.get(cat_key, [])
         if not tools:
             continue
@@ -592,14 +587,59 @@ def _render_tool_directory_table() -> str:
                 <td class="dir-name"><a href="{escape(t['url'])}" target="_blank">{escape(t['name'])}</a><span class="dir-maker">{escape(t['maker'])}</span></td>
                 <td class="dir-desc">{escape(t['desc'])}</td>
             </tr>"""
+    return rows
+
+
+def _render_tool_directory_table() -> str:
+    """Render a compact two-column table of well-known AI tools by category."""
+    by_cat: Dict[str, list] = {}
+    for t in _AI_TOOL_DIRECTORY:
+        by_cat.setdefault(t["cat"], []).append(t)
+
+    present = [ck for ck in _TOOL_CATEGORIES if by_cat.get(ck)]
+    left_keys: List[str] = []
+    right_keys: List[str] = []
+    left_n = right_n = 0
+    for ck in present:
+        n = len(by_cat[ck])
+        if left_n <= right_n:
+            left_keys.append(ck)
+            left_n += n
+        else:
+            right_keys.append(ck)
+            right_n += n
+
+    thead = '<thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>'
+    col_a = _tool_dir_tbody_for_cats(by_cat, left_keys)
+    col_b = _tool_dir_tbody_for_cats(by_cat, right_keys)
+
+    if not col_b.strip():
+        return f"""
+    <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
+    <div class="tool-dir-wrap tool-dir-hero tool-dir-hero--grid">
+        <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록">
+            {thead}
+            <tbody>{col_a}</tbody>
+        </table>
+    </div>"""
 
     return f"""
     <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
-    <div class="tool-dir-wrap tool-dir-hero">
-        <table class="tool-dir-table">
-            <thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>
-            <tbody>{rows}</tbody>
-        </table>
+    <div class="tool-dir-wrap tool-dir-hero tool-dir-hero--grid">
+        <div class="tool-dir-cols" role="presentation">
+            <div class="tool-dir-col">
+                <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록 (1/2)">
+                    {thead}
+                    <tbody>{col_a}</tbody>
+                </table>
+            </div>
+            <div class="tool-dir-col">
+                <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록 (2/2)">
+                    {thead}
+                    <tbody>{col_b}</tbody>
+                </table>
+            </div>
+        </div>
     </div>"""
 
 
@@ -815,15 +855,21 @@ def _ai_tools_glance_html(tools: List[dict]) -> str:
         )
     headlines_block = ""
     if bullets:
-        headlines_block = (
-            '<p class="ai-tools-glance-sub">대표 헤드라인</p>'
-            f'<ul class="ai-tools-glance-list">{"".join(bullets)}</ul>'
-        )
+        headlines_block = f"""
+        <div class="ai-tools-glance-box ai-tools-glance-box--headlines">
+            <p class="ai-tools-glance-sub">대표 헤드라인</p>
+            <ul class="ai-tools-glance-list">{"".join(bullets)}</ul>
+        </div>"""
+    chips_html = " ".join(chips)
     return f"""
     <div class="ai-tools-glance">
-        <p class="ai-tools-glance-title">한눈에 요약</p>
-        <p class="ai-tools-glance-meta">이번 수집 <strong>{n}</strong>건 · 분야별 비중</p>
-        <div class="glance-chips">{" ".join(chips)}</div>
+        <div class="ai-tools-glance-box ai-tools-glance-box--header">
+            <p class="ai-tools-glance-title">한눈에 요약</p>
+            <p class="ai-tools-glance-meta">이번 수집 <strong>{n}</strong>건 · 분야별 비중</p>
+        </div>
+        <div class="ai-tools-glance-box ai-tools-glance-box--chips">
+            <div class="glance-chips">{chips_html}</div>
+        </div>
         {headlines_block}
     </div>"""
 

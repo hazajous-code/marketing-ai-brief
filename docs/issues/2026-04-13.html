@@ -24,10 +24,12 @@
     </nav>
     
     <p class="section-label section-label-hero">마케팅·크리에이티브 AI 툴 한눈에</p>
-    <div class="tool-dir-wrap tool-dir-hero">
-        <table class="tool-dir-table">
-            <thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>
-            <tbody><tr class="dir-cat-row"><td colspan="3">💻 코딩 · 개발</td></tr><tr>
+    <div class="tool-dir-wrap tool-dir-hero tool-dir-hero--grid">
+        <div class="tool-dir-cols" role="presentation">
+            <div class="tool-dir-col">
+                <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록 (1/2)">
+                    <thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>
+                    <tbody><tr class="dir-cat-row"><td colspan="3">💻 코딩 · 개발</td></tr><tr>
                 <td class="dir-icon">💻</td>
                 <td class="dir-name"><a href="https://github.com/features/copilot" target="_blank">GitHub Copilot</a><span class="dir-maker">GitHub/Microsoft</span></td>
                 <td class="dir-desc">코드 자동완성 · AI 페어 프로그래밍</td>
@@ -43,22 +45,6 @@
                 <td class="dir-icon">💻</td>
                 <td class="dir-name"><a href="https://openai.com/index/codex/" target="_blank">Codex CLI</a><span class="dir-maker">OpenAI</span></td>
                 <td class="dir-desc">터미널에서 자연어로 코딩</td>
-            </tr><tr class="dir-cat-row"><td colspan="3">🎬 영상 · 비디오</td></tr><tr>
-                <td class="dir-icon">🎬</td>
-                <td class="dir-name"><a href="https://openai.com/sora" target="_blank">Sora</a><span class="dir-maker">OpenAI</span></td>
-                <td class="dir-desc">텍스트→비디오 생성</td>
-            </tr><tr>
-                <td class="dir-icon">🎬</td>
-                <td class="dir-name"><a href="https://runway.ml" target="_blank">Runway Gen-3</a><span class="dir-maker">Runway</span></td>
-                <td class="dir-desc">AI 영상 생성 · 편집 스튜디오</td>
-            </tr><tr>
-                <td class="dir-icon">🎬</td>
-                <td class="dir-name"><a href="https://pika.art" target="_blank">Pika</a><span class="dir-maker">Pika Labs</span></td>
-                <td class="dir-desc">텍스트/이미지→영상 변환</td>
-            </tr><tr>
-                <td class="dir-icon">🎬</td>
-                <td class="dir-name"><a href="https://kling.kuaishou.com" target="_blank">Kling AI</a><span class="dir-maker">Kuaishou</span></td>
-                <td class="dir-desc">고해상도 AI 영상 생성</td>
             </tr><tr class="dir-cat-row"><td colspan="3">🎨 이미지 · 디자인</td></tr><tr>
                 <td class="dir-icon">🎨</td>
                 <td class="dir-name"><a href="https://midjourney.com" target="_blank">Midjourney</a><span class="dir-maker">Midjourney</span></td>
@@ -79,6 +65,52 @@
                 <td class="dir-icon">🎨</td>
                 <td class="dir-name"><a href="https://stability.ai" target="_blank">Stable Diffusion</a><span class="dir-maker">Stability AI</span></td>
                 <td class="dir-desc">오픈소스 이미지 생성 모델</td>
+            </tr><tr class="dir-cat-row"><td colspan="3">📈 마케팅 · 광고</td></tr><tr>
+                <td class="dir-icon">📈</td>
+                <td class="dir-name"><a href="https://hubspot.com" target="_blank">HubSpot AI</a><span class="dir-maker">HubSpot</span></td>
+                <td class="dir-desc">CRM · 이메일 · 콘텐츠 마케팅 자동화</td>
+            </tr><tr>
+                <td class="dir-icon">📈</td>
+                <td class="dir-name"><a href="https://semrush.com" target="_blank">Semrush AI</a><span class="dir-maker">Semrush</span></td>
+                <td class="dir-desc">SEO · 키워드 · 경쟁분석 AI</td>
+            </tr><tr>
+                <td class="dir-icon">📈</td>
+                <td class="dir-name"><a href="https://copy.ai" target="_blank">Copy.ai</a><span class="dir-maker">Copy.ai</span></td>
+                <td class="dir-desc">마케팅 카피 · 세일즈 이메일 자동 생성</td>
+            </tr><tr class="dir-cat-row"><td colspan="3">⚡ 생산성 · 업무</td></tr><tr>
+                <td class="dir-icon">⚡</td>
+                <td class="dir-name"><a href="https://perplexity.ai" target="_blank">Perplexity</a><span class="dir-maker">Perplexity AI</span></td>
+                <td class="dir-desc">AI 검색 엔진 · 출처 기반 답변</td>
+            </tr><tr>
+                <td class="dir-icon">⚡</td>
+                <td class="dir-name"><a href="https://zapier.com" target="_blank">Zapier AI</a><span class="dir-maker">Zapier</span></td>
+                <td class="dir-desc">앱 간 자동화 워크플로 구축</td>
+            </tr><tr>
+                <td class="dir-icon">⚡</td>
+                <td class="dir-name"><a href="https://gamma.app" target="_blank">Gamma</a><span class="dir-maker">Gamma</span></td>
+                <td class="dir-desc">AI 프레젠테이션 · 문서 자동 생성</td>
+            </tr></tbody>
+                </table>
+            </div>
+            <div class="tool-dir-col">
+                <table class="tool-dir-table tool-dir-table--compact" aria-label="AI 툴 목록 (2/2)">
+                    <thead><tr><th class="dir-th-icon"></th><th>이름</th><th>특징</th></tr></thead>
+                    <tbody><tr class="dir-cat-row"><td colspan="3">🎬 영상 · 비디오</td></tr><tr>
+                <td class="dir-icon">🎬</td>
+                <td class="dir-name"><a href="https://openai.com/sora" target="_blank">Sora</a><span class="dir-maker">OpenAI</span></td>
+                <td class="dir-desc">텍스트→비디오 생성</td>
+            </tr><tr>
+                <td class="dir-icon">🎬</td>
+                <td class="dir-name"><a href="https://runway.ml" target="_blank">Runway Gen-3</a><span class="dir-maker">Runway</span></td>
+                <td class="dir-desc">AI 영상 생성 · 편집 스튜디오</td>
+            </tr><tr>
+                <td class="dir-icon">🎬</td>
+                <td class="dir-name"><a href="https://pika.art" target="_blank">Pika</a><span class="dir-maker">Pika Labs</span></td>
+                <td class="dir-desc">텍스트/이미지→영상 변환</td>
+            </tr><tr>
+                <td class="dir-icon">🎬</td>
+                <td class="dir-name"><a href="https://kling.kuaishou.com" target="_blank">Kling AI</a><span class="dir-maker">Kuaishou</span></td>
+                <td class="dir-desc">고해상도 AI 영상 생성</td>
             </tr><tr class="dir-cat-row"><td colspan="3">🎵 음악 · 오디오</td></tr><tr>
                 <td class="dir-icon">🎵</td>
                 <td class="dir-name"><a href="https://suno.com" target="_blank">Suno</a><span class="dir-maker">Suno AI</span></td>
@@ -111,30 +143,6 @@
                 <td class="dir-icon">✍️</td>
                 <td class="dir-name"><a href="https://gemini.google.com" target="_blank">Gemini</a><span class="dir-maker">Google</span></td>
                 <td class="dir-desc">멀티모달 AI · 검색 연동 어시스턴트</td>
-            </tr><tr class="dir-cat-row"><td colspan="3">📈 마케팅 · 광고</td></tr><tr>
-                <td class="dir-icon">📈</td>
-                <td class="dir-name"><a href="https://hubspot.com" target="_blank">HubSpot AI</a><span class="dir-maker">HubSpot</span></td>
-                <td class="dir-desc">CRM · 이메일 · 콘텐츠 마케팅 자동화</td>
-            </tr><tr>
-                <td class="dir-icon">📈</td>
-                <td class="dir-name"><a href="https://semrush.com" target="_blank">Semrush AI</a><span class="dir-maker">Semrush</span></td>
-                <td class="dir-desc">SEO · 키워드 · 경쟁분석 AI</td>
-            </tr><tr>
-                <td class="dir-icon">📈</td>
-                <td class="dir-name"><a href="https://copy.ai" target="_blank">Copy.ai</a><span class="dir-maker">Copy.ai</span></td>
-                <td class="dir-desc">마케팅 카피 · 세일즈 이메일 자동 생성</td>
-            </tr><tr class="dir-cat-row"><td colspan="3">⚡ 생산성 · 업무</td></tr><tr>
-                <td class="dir-icon">⚡</td>
-                <td class="dir-name"><a href="https://perplexity.ai" target="_blank">Perplexity</a><span class="dir-maker">Perplexity AI</span></td>
-                <td class="dir-desc">AI 검색 엔진 · 출처 기반 답변</td>
-            </tr><tr>
-                <td class="dir-icon">⚡</td>
-                <td class="dir-name"><a href="https://zapier.com" target="_blank">Zapier AI</a><span class="dir-maker">Zapier</span></td>
-                <td class="dir-desc">앱 간 자동화 워크플로 구축</td>
-            </tr><tr>
-                <td class="dir-icon">⚡</td>
-                <td class="dir-name"><a href="https://gamma.app" target="_blank">Gamma</a><span class="dir-maker">Gamma</span></td>
-                <td class="dir-desc">AI 프레젠테이션 · 문서 자동 생성</td>
             </tr><tr class="dir-cat-row"><td colspan="3">🔬 리서치 · 학습</td></tr><tr>
                 <td class="dir-icon">🔬</td>
                 <td class="dir-name"><a href="https://elicit.com" target="_blank">Elicit</a><span class="dir-maker">Elicit</span></td>
@@ -148,16 +156,26 @@
                 <td class="dir-name"><a href="https://notebooklm.google.com" target="_blank">NotebookLM</a><span class="dir-maker">Google</span></td>
                 <td class="dir-desc">문서 기반 AI 연구 노트 · 팟캐스트 생성</td>
             </tr></tbody>
-        </table>
+                </table>
+            </div>
+        </div>
     </div>
     
     <p class="section-label">AI 툴 뉴스 모음</p>
     
     <div class="ai-tools-glance">
-        <p class="ai-tools-glance-title">한눈에 요약</p>
-        <p class="ai-tools-glance-meta">이번 수집 <strong>8</strong>건 · 분야별 비중</p>
-        <div class="glance-chips"><span class="glance-chip">💻 코딩 · 개발 <strong>3</strong></span> <span class="glance-chip">💰 금융 · 핀테크 <strong>2</strong></span> <span class="glance-chip">⚡ 생산성 · 업무 <strong>2</strong></span> <span class="glance-chip">✍️ 글쓰기 · 콘텐츠 <strong>1</strong></span></div>
-        <p class="ai-tools-glance-sub">대표 헤드라인</p><ul class="ai-tools-glance-list"><li><a href="https://news.google.com/rss/articles/CBMi6wFBVV95cUxQOFZmMGJ0cTZtQVNVaVpjVzFtSEhadVU2Ul9RUWtiaW9wMWJxMmVqQy1BaVB6azNMTjV2VjhQTnhuTndBajh1Um9vTmg0b0pHVmNFNWNsYTE3N1JyQWdsSHJVVXR6RHNaWW5XbTVuWVY3REtpOVIwNlEzTllWMEZqQi12SmViR210LWFoY1V6d0ZTcnRYQVRTSWRaRUJ2S204Wko3V2hiMW5oclJGVEU4UEduUHNHSUtXUXVFSHNmX1dSNmJlRkNlaExhTEZWMW1VQ1Z5aTNURG9qX0ZuVUxaNWlCOUNLY0d4U1U40gHwAUFVX3lxTE92NHhPY1BMYTdVTDdzaFc3ME0yOEE0OTVNZTJWTVdhQ3c0RzFxN2luR29jYXptUmZFYlN3MS1BZEozX1Q3SFdGcUhrdHprQjBNZ1pKX1FSSzdhUU9leVJpZHRtY0dBVU04ekRmVW5SbVAzd2JOUkwteTFuUnVNa1puRDNVaTNnMGJsYkxkdFhVTTV2Wmh5RkthNndKQk45dEZySjQtRDZ2QXh1N3A0SjBlMmk4ejQtU19VMkhXcVRqMXU0Um1mcWhBeGVWaW5WV2RELUdjTl9vdlVmQ1VQQzktWWdsZXU2Z0pmZHZkbXVydA?oc=5" target="_blank">Anthropic의 새로운 Microsoft Word용 AI 도구가 Copilot에게 &#x27;문제&#x27;가 될 수 있다 - The Times of I…</a></li><li><a href="https://www.theverge.com/tech/911080/microsoft-ai-openclaw-365-businesses" target="_blank">마이크로소프트는 Copilot을 위해 OpenClaw와 유사한 AI 봇을 테스트하고 있다</a></li><li><a href="https://news.google.com/rss/articles/CBMibkFVX3lxTE5WMTdIN0J3VTNPY1ZfbGFiQzlRZTJwWWVyVG9Pb25Bc3hwWEF0T2Qxcms3YklxcXdhdDZHSE9hd0tWU1JGeGZMbmFSQUY3QWgwVDc5ZktOR0pESzRUc1FRcnRnZ1NWSkk4bzdZMmVn?oc=5" target="_blank">LG, 런던증권거래소그룹-키움증권과 금융 AI 에이전트 서비스 첫 출시 - 이슈밸리</a></li><li><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBONFg0N0FtQmJTZzVrSEdwVk9BTjNCTGJoMDg0bzNkN1Q4Z1NXbkdhRThNUndtdE1yVHdLMklZYk1JWENqdTF4TXpYbGVnM2hXUVFnbVBzWnAwTTV6b0dXX1BMUm5yQS1VNmU2X1o1X1_SAXRBVV95cUxOSGdvM25Celloak9oSVdZWjZldlVxWVlTTmQxNkZLS0tuYnU3dEdoVko5d1NDeTdzbjFtT1pEWFU3T0lWOHhyRHNpYldJRWNwMU9ldHo4MFVpVkdId2lXd1pnLWlkbEVFSUNvVWp5M0NmbmZPag?oc=5" target="_blank">LG, 런던증권거래소그룹-키움증권과 개인투자자 AI 서비스 출시 박차 - 우먼타임스</a></li><li><a href="https://techcrunch.com/2026/04/13/microsoft-is-working-on-yet-another-openclaw-like-agent/" target="_blank">마이크로소프트가 또 다른 오픈클로(OpenClaw)와 유사한 에이전트를 개발 중이다</a></li></ul>
+        <div class="ai-tools-glance-box ai-tools-glance-box--header">
+            <p class="ai-tools-glance-title">한눈에 요약</p>
+            <p class="ai-tools-glance-meta">이번 수집 <strong>8</strong>건 · 분야별 비중</p>
+        </div>
+        <div class="ai-tools-glance-box ai-tools-glance-box--chips">
+            <div class="glance-chips"><span class="glance-chip">💻 코딩 · 개발 <strong>3</strong></span> <span class="glance-chip">💰 금융 · 핀테크 <strong>2</strong></span> <span class="glance-chip">⚡ 생산성 · 업무 <strong>2</strong></span> <span class="glance-chip">✍️ 글쓰기 · 콘텐츠 <strong>1</strong></span></div>
+        </div>
+        
+        <div class="ai-tools-glance-box ai-tools-glance-box--headlines">
+            <p class="ai-tools-glance-sub">대표 헤드라인</p>
+            <ul class="ai-tools-glance-list"><li><a href="https://news.google.com/rss/articles/CBMi6wFBVV95cUxQOFZmMGJ0cTZtQVNVaVpjVzFtSEhadVU2Ul9RUWtiaW9wMWJxMmVqQy1BaVB6azNMTjV2VjhQTnhuTndBajh1Um9vTmg0b0pHVmNFNWNsYTE3N1JyQWdsSHJVVXR6RHNaWW5XbTVuWVY3REtpOVIwNlEzTllWMEZqQi12SmViR210LWFoY1V6d0ZTcnRYQVRTSWRaRUJ2S204Wko3V2hiMW5oclJGVEU4UEduUHNHSUtXUXVFSHNmX1dSNmJlRkNlaExhTEZWMW1VQ1Z5aTNURG9qX0ZuVUxaNWlCOUNLY0d4U1U40gHwAUFVX3lxTE92NHhPY1BMYTdVTDdzaFc3ME0yOEE0OTVNZTJWTVdhQ3c0RzFxN2luR29jYXptUmZFYlN3MS1BZEozX1Q3SFdGcUhrdHprQjBNZ1pKX1FSSzdhUU9leVJpZHRtY0dBVU04ekRmVW5SbVAzd2JOUkwteTFuUnVNa1puRDNVaTNnMGJsYkxkdFhVTTV2Wmh5RkthNndKQk45dEZySjQtRDZ2QXh1N3A0SjBlMmk4ejQtU19VMkhXcVRqMXU0Um1mcWhBeGVWaW5WV2RELUdjTl9vdlVmQ1VQQzktWWdsZXU2Z0pmZHZkbXVydA?oc=5" target="_blank">Anthropic의 새로운 Microsoft Word용 AI 도구가 Copilot에게 &#x27;문제&#x27;가 될 수 있다 - The Times of I…</a></li><li><a href="https://www.theverge.com/tech/911080/microsoft-ai-openclaw-365-businesses" target="_blank">마이크로소프트는 Copilot을 위해 OpenClaw와 유사한 AI 봇을 테스트하고 있다</a></li><li><a href="https://news.google.com/rss/articles/CBMibkFVX3lxTE5WMTdIN0J3VTNPY1ZfbGFiQzlRZTJwWWVyVG9Pb25Bc3hwWEF0T2Qxcms3YklxcXdhdDZHSE9hd0tWU1JGeGZMbmFSQUY3QWgwVDc5ZktOR0pESzRUc1FRcnRnZ1NWSkk4bzdZMmVn?oc=5" target="_blank">LG, 런던증권거래소그룹-키움증권과 금융 AI 에이전트 서비스 첫 출시 - 이슈밸리</a></li><li><a href="https://news.google.com/rss/articles/CBMicEFVX3lxTFBONFg0N0FtQmJTZzVrSEdwVk9BTjNCTGJoMDg0bzNkN1Q4Z1NXbkdhRThNUndtdE1yVHdLMklZYk1JWENqdTF4TXpYbGVnM2hXUVFnbVBzWnAwTTV6b0dXX1BMUm5yQS1VNmU2X1o1X1_SAXRBVV95cUxOSGdvM25Celloak9oSVdZWjZldlVxWVlTTmQxNkZLS0tuYnU3dEdoVko5d1NDeTdzbjFtT1pEWFU3T0lWOHhyRHNpYldJRWNwMU9ldHo4MFVpVkdId2lXd1pnLWlkbEVFSUNvVWp5M0NmbmZPag?oc=5" target="_blank">LG, 런던증권거래소그룹-키움증권과 개인투자자 AI 서비스 출시 박차 - 우먼타임스</a></li><li><a href="https://techcrunch.com/2026/04/13/microsoft-is-working-on-yet-another-openclaw-like-agent/" target="_blank">마이크로소프트가 또 다른 오픈클로(OpenClaw)와 유사한 에이전트를 개발 중이다</a></li></ul>
+        </div>
     </div>
     <div class="ai-tools-header"><span class="ai-tools-label">RSS 수집 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></span><div class="ai-tools-line"></div></div>
     <div class="ai-tools-grid ai-tools-news-grid">
@@ -239,14 +257,14 @@
     <div class="article-grid">
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span></div>
-            <p class="article-title"><a href="https://www.marketingdive.com/news/chipotle-rewards-relaunch-freepotle-returns/817317/" target="_blank">치폴레가 보상 시스템을 개편하다</a></p>
-            <p class="ai-tool-desc">더 많은 무료 상품과 매장 내 캠페인을 통해 등록을 늘리면, 이 패스트 캐주얼 거대 기업이 이미 상당한 보상 기반을 확장하는 데 도움이 될 수 있습니다.</p>
+            <p class="article-title"><a href="https://www.marketingdive.com/news/chipotle-rewards-relaunch-freepotle-returns/817317/" target="_blank">Chipotle overhauls rewards system</a></p>
+            <p class="ai-tool-desc">More free items and an in-store campaign to boost enrollment could help the fast casual giant expand its already considerable rewards base.</p>
             <div class="article-meta"><span>Marketingdive</span></div>
         </div>
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE5iOGdUMnR1cWk0dXFxem1nbFhMMnJyZzVHYk5fZFB4MHJOV09fZjg3Nmh6Q0dpNm10T0JnMHJaM0l6Rm1yVFBveC1KaDQ4QjZtTjY0WUlmUzdYd3dJek5xZDhsWjFzWjQ?oc=5" target="_blank">CIO들: 비용 최적화는 비용 절감이 아니라 자금 성장에 초점을 맞춰야 한다 - 가트너</a></p>
-            <p class="ai-tool-desc">CIO 여러분: 비용 최적화는 비용 절감이 아니라 자금 성장에 집중해야 합니다. Gartner</p>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE5iOGdUMnR1cWk0dXFxem1nbFhMMnJyZzVHYk5fZFB4MHJOV09fZjg3Nmh6Q0dpNm10T0JnMHJaM0l6Rm1yVFBveC1KaDQ4QjZtTjY0WUlmUzdYd3dJek5xZDhsWjFzWjQ?oc=5" target="_blank">CIOs: Focus cost optimization on funding growth, not cutting costs - Gartner</a></p>
+            <p class="ai-tool-desc">CIOs: Focus cost optimization on funding growth, not cutting costs Gartner</p>
             <div class="article-meta"><span>Gartner</span></div>
         </div>
         <div class="article-card">
@@ -281,26 +299,26 @@
         </div>
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxPLURla0ZubVRteEQzM3NuWXdhR3M1V09kbXJxcXNwbjJFSTRFcW5oR09RRUVaWW1GelFUUVA1QXRNOFRyNGcyOW4zOW1PMm1WeUpUWXZ2TVVFck5pUGdkTzhMY2RPUVhFTF9WWVFwUHZjeXdrQ1gtQkRldGhsazNMSlhQOVpXNk4tdkhQT1J0UHFFV0FEcXg5UFJjak8?oc=5" target="_blank">당신의 고객 옹호자들은 위기 커뮤니케이션 계획이 아니다 - 포레스터</a></p>
-            <p class="ai-tool-desc">고객 옹호자가 위기 커뮤니케이션 계획이 아닙니다. Forrester</p>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxPLURla0ZubVRteEQzM3NuWXdhR3M1V09kbXJxcXNwbjJFSTRFcW5oR09RRUVaWW1GelFUUVA1QXRNOFRyNGcyOW4zOW1PMm1WeUpUWXZ2TVVFck5pUGdkTzhMY2RPUVhFTF9WWVFwUHZjeXdrQ1gtQkRldGhsazNMSlhQOVpXNk4tdkhQT1J0UHFFV0FEcXg5UFJjak8?oc=5" target="_blank">Your Customer Advocates Are Not Your Crisis Communications Plan - Forrester</a></p>
+            <p class="ai-tool-desc">Your Customer Advocates Are Not Your Crisis Communications Plan Forrester</p>
             <div class="article-meta"><span>Forrester</span></div>
         </div>
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE0tR1EydzJ1ZWdfREQwTkljNy1rYXhIRFg1aXgyQVdOdlNhY0RUYlptVkhZY1hQbUxMN0VGZ1dKRUQ4cjlueUJMSDc4U3RETTdTQjNJVzBKdG9aMVVMcld0VERaak1XS1QtdjlTa004LUYzNnFkSDRWamVEbGMwNWc?oc=5" target="_blank">2026년 최고의 SAP 클레임 관리 대안 및 경쟁사 - 가트너</a></p>
-            <p class="ai-tool-desc">2026년 SAP 클레임 관리 대체 방안 및 경쟁사. Gartner</p>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE0tR1EydzJ1ZWdfREQwTkljNy1rYXhIRFg1aXgyQVdOdlNhY0RUYlptVkhZY1hQbUxMN0VGZ1dKRUQ4cjlueUJMSDc4U3RETTdTQjNJVzBKdG9aMVVMcld0VERaak1XS1QtdjlTa004LUYzNnFkSDRWamVEbGMwNWc?oc=5" target="_blank">Top SAP Claims Management Alternatives &amp; Competitors 2026 - Gartner</a></p>
+            <p class="ai-tool-desc">Top SAP Claims Management Alternatives &amp; Competitors 2026 Gartner</p>
             <div class="article-meta"><span>Gartner</span></div>
         </div>
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
-            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE5tMUxKd2xfaGVkZ05kaTI3SHZaSVlWNDFOc3JyOXRveWtCajhDaFNFRW51b19NX3FULXFtdF81Z0VMNndhY3NMV1UxWTRNSUdKN1cxNWo2VDVJb3R1S1RaTXdBTTQ1dFhLWUtmRTh1anE3UQ?oc=5" target="_blank">2026년 Top Bright Data 대안 및 경쟁사 - 가트너</a></p>
-            <p class="ai-tool-desc">2026년 브라이트 데이터 대안 및 경쟁사 TOP Gartner</p>
+            <p class="article-title"><a href="https://news.google.com/rss/articles/CBMickFVX3lxTE5tMUxKd2xfaGVkZ05kaTI3SHZaSVlWNDFOc3JyOXRveWtCajhDaFNFRW51b19NX3FULXFtdF81Z0VMNndhY3NMV1UxWTRNSUdKN1cxNWo2VDVJb3R1S1RaTXdBTTQ1dFhLWUtmRTh1anE3UQ?oc=5" target="_blank">Top Bright Data Alternatives &amp; Competitors 2026 - Gartner</a></p>
+            <p class="ai-tool-desc">Top Bright Data Alternatives &amp; Competitors 2026 Gartner</p>
             <div class="article-meta"><span>Gartner</span></div>
         </div>
         <div class="article-card">
             <div class="article-badges"><span class="badge badge-new">신규</span><span class="badge badge-research">리서치</span></div>
-            <p class="article-title"><a href="https://sloanreview.mit.edu/article/managing-up-a-skill-set-that-matters-now/" target="_blank">상사 관리하기: 지금 중요한 기술 세트</a></p>
-            <p class="ai-tool-desc">Carolyn Geason-Beissel/MIT SMR | Getty Images 상사 관리 능력이 뛰어난가요? 조직 계층의 상위 사람들을 관리하고 대처하는 데 재능이 부족하다면</p>
+            <p class="article-title"><a href="https://sloanreview.mit.edu/article/managing-up-a-skill-set-that-matters-now/" target="_blank">Managing Up: A Skill Set That Matters Now</a></p>
+            <p class="ai-tool-desc">Carolyn Geason-Beissel/MIT SMR | Getty Images Are you skilled at managing up? If your talents are lacking when it comes to managing and dealing with the people above you in the organizational hierarch</p>
             <div class="article-meta"><span>MIT Sloan Review</span></div>
         </div>
         <div class="article-card">
