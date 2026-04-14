@@ -665,6 +665,66 @@ a:hover { color: var(--accent-hover); }
     -webkit-line-clamp: 3;
 }
 
+/* ── AI tool news: at-a-glance summary ─────── */
+.ai-tools-glance {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+}
+.ai-tools-glance-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin: 0 0 6px;
+}
+.ai-tools-glance-meta {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+.ai-tools-glance-sub {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 12px 0 6px;
+}
+.glance-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+}
+.glance-chip {
+    font-size: 11px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    color: var(--text-secondary);
+}
+.glance-chip strong { color: var(--text-primary); margin-left: 2px; }
+.ai-tools-glance-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ai-tools-glance-list li {
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.ai-tools-glance-list li:last-child { border-bottom: none; }
+.ai-tools-glance-list a { color: var(--text-primary); text-decoration: none; font-weight: 500; }
+.ai-tools-glance-list a:hover { color: var(--purple); text-decoration: underline; }
+
 /* ── 서머리 패널 (2열 레이아웃) ─────────────── */
 .yt-summary-card {
     background: var(--bg-card);

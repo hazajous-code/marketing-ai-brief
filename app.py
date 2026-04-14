@@ -12,7 +12,7 @@ import requests
 import streamlit as st
 
 from collect_news import DEFAULT_FEEDS, fetch_ai_tools_news, fetch_rss_news
-from newsletter_builder import _render_tool_directory_table, _render_youtube_section
+from newsletter_builder import _ai_tools_glance_html, _render_tool_directory_table
 from mailer import add_subscriber, get_active_emails, is_configured, load_subscribers, send_daily_brief
 from scheduler import get_next_fire_time, start_scheduler, trigger_now
 from summarize import summarize_text
@@ -580,6 +580,52 @@ p.section-label {
 .yt-compact-channel { font-size: 10px; color: var(--text-faint); }
 .ai-tools-news-grid .ai-tool-desc { -webkit-line-clamp: 3; }
 
+.ai-tools-glance {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid #7C3AED;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+}
+.ai-tools-glance-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #7C3AED;
+    margin: 0 0 6px;
+}
+.ai-tools-glance-meta { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 10px; }
+.ai-tools-glance-sub {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 12px 0 6px;
+}
+.glance-chips { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.glance-chip {
+    font-size: 11px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    color: var(--text-secondary);
+}
+.glance-chip strong { color: var(--text-primary); margin-left: 2px; }
+.ai-tools-glance-list { list-style: none; padding: 0; margin: 0; }
+.ai-tools-glance-list li {
+    font-size: 12.5px;
+    line-height: 1.55;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.ai-tools-glance-list li:last-child { border-bottom: none; }
+.ai-tools-glance-list a { color: var(--text-primary); text-decoration: none; font-weight: 500; }
+.ai-tools-glance-list a:hover { color: #7C3AED; text-decoration: underline; }
+
 /* ── article cards ─────────────────────────── */
 .a-card {
     background: var(--bg-card);
@@ -1146,6 +1192,19 @@ def render_ai_tools_section(tools: List[dict]) -> None:
     else:
         ko_cache = {}
 
+    glance_tools: List[dict] = []
+    for t in display:
+        aid = t.get("id", "")
+        g = dict(t)
+        if t.get("lang") != "ko" and aid in ko_cache:
+            g["title_ko"] = ko_cache[aid]["title"]
+            g["summary_ko"] = ko_cache[aid]["desc"]
+        else:
+            g["title_ko"] = t.get("title", "")
+            g["summary_ko"] = (t.get("content") or "")[:200]
+        glance_tools.append(g)
+    st.markdown(_ai_tools_glance_html(glance_tools), unsafe_allow_html=True)
+
     for row_start in range(0, len(display), 3):
         row_items = display[row_start:row_start + 3]
         cols = st.columns(3)
@@ -1241,28 +1300,6 @@ def render_daily_digest(items: List[dict]) -> None:
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 
-@st.cache_data(ttl=3600)
-def _get_youtube_videos() -> List[dict]:
-    try:
-        from collect_news import fetch_youtube_ai_news
-        videos = fetch_youtube_ai_news(limit=12, days=14)
-        for v in videos:
-            if hasattr(v.get("published_at"), "isoformat"):
-                v["published_at"] = v["published_at"].isoformat()
-        return videos
-    except Exception:
-        return []
-
-
-def render_youtube_section() -> None:
-    """Compact YouTube block (same HTML as GitHub Pages)."""
-    videos = _get_youtube_videos()
-    if not videos:
-        return
-    st.markdown(_render_youtube_section(videos), unsafe_allow_html=True)
-    st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
-
-
 def _summary_to_bullets_html(summary: str) -> str:
     lines = [ln.strip().lstrip("- ").strip() for ln in summary.strip().splitlines() if ln.strip().startswith("-")]
     if not lines:
@@ -1333,7 +1370,6 @@ def render_coming_soon(period: str, description: str) -> None:
 
 def _render_daily_tab(items: List[dict], summary_mode: str, language: str) -> None:
     render_daily_digest(items)
-    render_youtube_section()
 
     query = st.text_input(
         "search", placeholder="키워드로 검색...",

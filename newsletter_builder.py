@@ -234,20 +234,6 @@ def _fetch_live_ai_tools(limit: int = 12) -> List[dict]:
         return []
 
 
-def _fetch_live_youtube(limit: int = 16) -> List[dict]:
-    """Fetch recent YouTube AI creator videos (global + kr)."""
-    try:
-        from collect_news import fetch_youtube_ai_news
-        videos = fetch_youtube_ai_news(limit=limit, days=14)
-        for v in videos:
-            if isinstance(v.get("published_at"), datetime):
-                v["published_at"] = v["published_at"].isoformat()
-        return videos
-    except Exception as e:
-        logger.warning("Failed to fetch YouTube news: %s", e)
-        return []
-
-
 _HANGUL_RE = re.compile(r"[\u3130-\u318F\uAC00-\uD7A3]")
 
 
@@ -797,10 +783,56 @@ def _fallback_period_report(items: List[dict], period: str) -> dict:
 
 # ── HTML fragment builders ───────────────────────────────────────────
 
+def _ai_tools_glance_html(tools: List[dict]) -> str:
+    """Rule-based at-a-glance summary (no LLM): counts by category + top headlines."""
+    if not tools:
+        return ""
+    n = len(tools)
+    counter: Counter[str] = Counter()
+    for t in tools:
+        counter[
+            _classify_tool_category(
+                t.get("title_ko") or t.get("title", ""),
+                t.get("summary_ko") or t.get("content", ""),
+            )
+        ] += 1
+    chips = []
+    for cat, cnt in counter.most_common(6):
+        info = _TOOL_CATEGORIES.get(cat, {"icon": "🔧", "label": "기타"})
+        chips.append(
+            f'<span class="glance-chip">{info["icon"]} {escape(info["label"])} '
+            f'<strong>{cnt}</strong></span>'
+        )
+    bullets = []
+    for t in tools[:5]:
+        title = (t.get("title_ko") or t.get("title") or "").strip()
+        link = (t.get("link") or "#").strip()
+        if not title:
+            continue
+        short = title if len(title) <= 80 else title[:77] + "…"
+        bullets.append(
+            f'<li><a href="{escape(link)}" target="_blank">{escape(short)}</a></li>'
+        )
+    headlines_block = ""
+    if bullets:
+        headlines_block = (
+            '<p class="ai-tools-glance-sub">대표 헤드라인</p>'
+            f'<ul class="ai-tools-glance-list">{"".join(bullets)}</ul>'
+        )
+    return f"""
+    <div class="ai-tools-glance">
+        <p class="ai-tools-glance-title">한눈에 요약</p>
+        <p class="ai-tools-glance-meta">이번 수집 <strong>{n}</strong>건 · 분야별 비중</p>
+        <div class="glance-chips">{" ".join(chips)}</div>
+        {headlines_block}
+    </div>"""
+
+
 def _render_ai_tools_html(ai_tools: List[dict]) -> str:
-    """Render AI tool news cards with category tags."""
+    """Render AI tool news: glance summary + cards with category tags."""
     if not ai_tools:
         return ""
+    glance = _ai_tools_glance_html(ai_tools)
     cards = ""
     for t in ai_tools:
         title = escape(t.get("title_ko") or t.get("title", ""))
@@ -822,6 +854,7 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
         </div>"""
     return f"""
     <p class="section-label">AI 툴 뉴스 모음</p>
+    {glance}
     <div class="ai-tools-header"><span class="ai-tools-label">RSS 수집 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></span><div class="ai-tools-line"></div></div>
     <div class="ai-tools-grid ai-tools-news-grid">{cards}</div>"""
 
@@ -864,111 +897,6 @@ def _render_insights_html(insights: List[dict]) -> str:
     return f"""
     <p class="section-label">오늘의 마케팅 인사이트</p>
     <div class="insight-cards">{cards}</div>"""
-
-
-def _yt_video_id(link: str) -> str:
-    m = re.search(r"(?:v=|/embed/|youtu\.be/)([a-zA-Z0-9_-]{11})", link or "")
-    return m.group(1) if m else ""
-
-
-def _yt_card_html(v: dict) -> str:
-    """Single YouTube video card HTML."""
-    title = escape(v.get("title") or "")
-    link = escape(v.get("link") or "#")
-    channel = escape(v.get("source") or "YouTube")
-    desc = escape(v.get("content") or "")
-    thumb = escape(v.get("thumbnail") or "")
-    date_str = escape((v.get("published_str") or "")[:10])
-    new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
-    region = v.get("region", "global")
-    region_badge = (
-        '<span class="yt-region-badge yt-region-kr">KR</span>'
-        if region == "kr"
-        else '<span class="yt-region-badge yt-region-gl">EN</span>'
-    )
-
-    thumb_html = (
-        f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
-        f'onerror="this.parentElement.style.display=\'none\'">'
-        if thumb else ""
-    )
-    play_svg = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' if thumb else ""
-    thumb_section = (
-        f'<a href="{link}" target="_blank" class="yt-thumb-wrap">'
-        f'{thumb_html}<div class="yt-play-icon">{play_svg}</div></a>'
-    ) if thumb else ""
-
-    return f"""
-    <div class="yt-card">
-        {thumb_section}
-        <div class="yt-body">
-            <div class="yt-channel-row">
-                <span class="yt-badge">▶ YouTube</span>
-                {region_badge}
-                <span class="yt-channel-name">{channel}</span>
-                {new_badge}
-            </div>
-            <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
-            <p class="yt-desc">{desc}</p>
-            <p class="yt-meta">{date_str}</p>
-        </div>
-    </div>"""
-
-
-def _yt_micro_summary(videos: List[dict]) -> str:
-    """One-line summary — avoids large 2-column summary card."""
-    if not videos:
-        return ""
-    gl = sum(1 for v in videos if v.get("region") != "kr")
-    kr = sum(1 for v in videos if v.get("region") == "kr")
-    return (
-        f'<p class="yt-micro-line">📺 <strong>크리에이터 피드</strong> '
-        f'<span class="yt-micro-meta">해외 {gl}편 · 국내 {kr}편</span></p>'
-    )
-
-
-def _render_youtube_section(videos: List[dict]) -> str:
-    """Compact YouTube: one-line summary + small thumbnail list (minimal footprint)."""
-    if not videos:
-        return ""
-
-    global_vids = [v for v in videos if v.get("region") != "kr"][:3]
-    kr_vids     = [v for v in videos if v.get("region") == "kr"][:3]
-
-    summary = _yt_micro_summary(videos)
-
-    def _compact_list(vids: List[dict]) -> str:
-        items = ""
-        for v in vids:
-            vid_id = v.get("video_id") or _yt_video_id(v.get("link", ""))
-            link = escape(v.get("link", "#"))
-            title = escape(v.get("title", ""))
-            channel = escape(v.get("source", ""))
-            thumb = f"https://i.ytimg.com/vi/{vid_id}/mqdefault.jpg" if vid_id else ""
-            thumb_html = f'<img class="yt-compact-thumb" src="{thumb}" alt="">' if thumb else ""
-            items += f"""<a href="{link}" target="_blank" class="yt-compact-item">
-                {thumb_html}
-                <div class="yt-compact-text">
-                    <span class="yt-compact-title">{title}</span>
-                    <span class="yt-compact-channel">{channel}</span>
-                </div>
-            </a>"""
-        return items
-
-    global_section = ""
-    if global_vids:
-        global_section = f'<div class="yt-compact-group"><p class="yt-sub-label">🌎 해외</p><div class="yt-compact-list">{_compact_list(global_vids)}</div></div>'
-
-    kr_section = ""
-    if kr_vids:
-        kr_section = f'<div class="yt-compact-group"><p class="yt-sub-label">🇰🇷 국내</p><div class="yt-compact-list">{_compact_list(kr_vids)}</div></div>'
-
-    return f"""
-    <p class="section-label">AI 크리에이터 영상</p>
-    <div class="yt-section yt-section-compact">
-        {summary}
-        <div class="yt-compact-grid">{global_section}{kr_section}</div>
-    </div>"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
@@ -1085,7 +1013,6 @@ def build_daily_page(
     insights: List[dict],
     articles: List[dict],
     ai_tools: List[dict] | None = None,
-    youtube_videos: List[dict] | None = None,
     prev_date: str | None = None,
     next_date: str | None = None,
 ) -> str:
@@ -1094,7 +1021,6 @@ def build_daily_page(
     nav_left = f'<a href="{prev_date}.html">&larr; {prev_date}</a>' if prev_date else '<span></span>'
     nav_right = f'<a href="{next_date}.html">{next_date} &rarr;</a>' if next_date else '<span></span>'
     tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
-    yt_section = _render_youtube_section(youtube_videos or [])
     tool_dir_html = _render_tool_directory_table()
 
     body = f"""
@@ -1114,7 +1040,6 @@ def build_daily_page(
     {tool_dir_html}
     {_render_ai_tools_html(ai_tools_ko)}
     {_render_insights_html(insights)}
-    {yt_section}
     {_render_article_cards(articles_ko)}
     {_subscribe_banner_html()}
     <footer class="footer">
@@ -1133,7 +1058,6 @@ def build_index_page(
     older_issues: List[dict],
     weekly_reports: List[dict],
     monthly_reports: List[dict],
-    youtube_videos: List[dict] | None = None,
 ) -> str:
     """Build the main index.html — dashboard style with today's content + archive."""
     from zoneinfo import ZoneInfo
@@ -1147,7 +1071,6 @@ def build_index_page(
     ai_tools_html = _render_ai_tools_html(ai_tools_ko)
     tool_dir_html = _render_tool_directory_table()
     insights_html = _render_insights_html(latest_insights)
-    yt_html = _render_youtube_section(youtube_videos or [])
     articles_html = _render_article_cards(articles_ko, limit=9)
 
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)
@@ -1165,7 +1088,6 @@ def build_index_page(
     {tool_dir_html}
     {ai_tools_html}
     {insights_html}
-    {yt_html}
     {articles_html}
     {tabs_html}
     {subscribe_html}
@@ -1318,15 +1240,13 @@ def publish_single_date(date_str: str, dates_list: List[str] | None = None, is_l
     if not ai_tools and is_latest:
         ai_tools = _fetch_live_ai_tools(limit=8)
 
-    youtube_videos = _fetch_live_youtube(limit=8) if is_latest else []
-
     if dates_list is None:
         dates_list = _all_dates()
     idx = dates_list.index(date_str) if date_str in dates_list else -1
     prev_date = dates_list[idx + 1] if idx >= 0 and idx + 1 < len(dates_list) else None
     next_date = dates_list[idx - 1] if idx > 0 else None
 
-    html = build_daily_page(date_str, insights, articles, ai_tools, youtube_videos, prev_date, next_date)
+    html = build_daily_page(date_str, insights, articles, ai_tools, prev_date, next_date)
     _ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     out = _ISSUES_DIR / f"{date_str}.html"
     out.write_text(html, encoding="utf-8")
@@ -1464,9 +1384,6 @@ def publish_index() -> Path:
     if not latest_ai_tools:
         latest_ai_tools = _fetch_live_ai_tools(limit=12)
 
-    # YouTube videos: always fetch live for index page
-    latest_youtube = _fetch_live_youtube(limit=8)
-
     # Recent = last 7 days of issues (as cards), older = the rest (collapsed)
     recent_issues = []
     older_issues = []
@@ -1486,7 +1403,6 @@ def publish_index() -> Path:
     html = build_index_page(
         latest_date, latest_articles, latest_insights, latest_ai_tools,
         recent_issues, older_issues, weekly_reports, monthly_reports,
-        youtube_videos=latest_youtube,
     )
     _DOCS_DIR.mkdir(parents=True, exist_ok=True)
     out = _DOCS_DIR / "index.html"
