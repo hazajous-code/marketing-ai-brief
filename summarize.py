@@ -1,6 +1,6 @@
 """LLM-powered key point extraction for Marketing AI Brief.
 
-Uses Ollama (LLaMA 3.2) to extract 2-3 actionable key points per article.
+Uses Ollama (Qwen2.5) to extract 2-3 actionable key points per article.
 Falls back to keyword-matched templates when the LLM is unavailable.
 """
 from __future__ import annotations
@@ -9,12 +9,9 @@ import re
 from functools import lru_cache
 from typing import Dict, List
 
-import requests
+from ollama_client import ollama_generate
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1:8b"
-OLLAMA_TIMEOUT = 12
-MAX_CHARS = 3000
+MAX_CHARS = 1500
 
 PROMPT = """
 You are a senior marketing strategist. Read the article and extract 2-3 key points.
@@ -136,29 +133,17 @@ def _parse_bullets(raw: str) -> str:
     return "\n".join(lines[:3])
 
 
-def _call_ollama(text: str) -> str:
-    prompt = f"{PROMPT}\n\nArticle:\n{_truncate(text)}"
-    res = requests.post(
-        OLLAMA_URL,
-        json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-        timeout=OLLAMA_TIMEOUT,
-    )
-    res.raise_for_status()
-    return (res.json().get("response") or "").strip()
-
-
 @lru_cache(maxsize=1024)
 def summarize_text(text: str, length: str = "medium") -> str:
     cleaned = _clean(text)
     if not cleaned:
         return _fallback(cleaned)
     try:
-        raw = _call_ollama(cleaned)
+        prompt = f"{PROMPT}\n\nArticle:\n{_truncate(cleaned)}"
+        raw = ollama_generate(prompt, timeout=45, retries=1)
         parsed = _parse_bullets(raw)
         if parsed:
             return parsed
     except Exception:
         pass
     return _fallback(cleaned)
-
-

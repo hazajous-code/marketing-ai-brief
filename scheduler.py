@@ -47,8 +47,6 @@ def _load_recent_articles(days: int = 1) -> List[dict]:
 
 def _generate_digest(articles: List[dict]) -> List[dict]:
     """Generate daily digest insights (reuses app logic without Streamlit dep)."""
-    import requests as _req
-
     CATEGORIES = [
         "Generative Engine Optimization",
         "AI Automation in Marketing Execution",
@@ -63,26 +61,23 @@ def _generate_digest(articles: List[dict]) -> List[dict]:
 
     prompt = (
         "You are a global marketing strategist writing a premium daily brief.\n"
+        "You MUST write ALL text content in Korean (한국어). Do NOT use Chinese or any other language.\n"
         "Classify the news into exactly 3 fixed categories and write insight-focused analysis.\n"
         "Do NOT summarize headlines. Extract strategic patterns and interpret meaning.\n"
         "Tone: professional newsletter, concise consulting report.\n\n"
         "Categories:\n- Generative Engine Optimization\n- AI Automation in Marketing Execution\n- Marketing AI Trend\n\n"
         "Return ONLY valid JSON array with exactly 3 objects:\n"
-        '[{"title":"category","summary":"2-3 lines","key_points":["...","..."],'
+        '[{"title":"category","summary":"한국어 2-3 lines","key_points":["한국어...","한국어..."],'
         '"sources":[{"title":"...","link":"..."}],'
-        '"marketing_insight":"...","strategic_implication":"..."}]\n'
+        '"marketing_insight":"한국어...","strategic_implication":"한국어..."}]\n'
         "Rules: 3 sections only, 2-3 sources each from provided news, no markdown.\n\n"
         f"News:\n{payload}"
     )
 
     try:
-        res = _req.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=30,
-        )
-        res.raise_for_status()
-        parsed = json.loads((res.json().get("response") or "").strip())
+        from ollama_client import ollama_generate
+        raw = ollama_generate(prompt, timeout=180, retries=1)
+        parsed = json.loads(raw)
         if isinstance(parsed, list) and len(parsed) == 3:
             return parsed
     except Exception:

@@ -94,6 +94,19 @@ KST = ZoneInfo("Asia/Seoul")
 
 st.set_page_config(page_title="Marketing AI Brief", layout="wide")
 
+
+@st.cache_resource
+def _warmup_ollama():
+    """Pre-load the LLM model into Ollama memory to eliminate cold start."""
+    try:
+        from ollama_client import warmup
+        warmup()
+    except Exception:
+        pass
+
+
+_warmup_ollama()
+
 DAILY_DIGEST_CATEGORIES = [
     "Generative Engine Optimization",
     "AI Automation in Marketing Execution",
@@ -439,26 +452,42 @@ NEWSLETTER_CSS = """
 /* YouTube region badges */
 .yt-region-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px; letter-spacing: .5px; }
 .yt-region-gl { background: #1a73e8; color: #fff; }
-.yt-region-kr { background: #0d47a1; color: #fff; }
+.yt-region-kr { background: #c62828; color: #fff; }
+
+/* YouTube section wrapper */
+.yt-section {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px 22px; margin-bottom: 28px;
+}
+.yt-sub-section { margin-top: 4px; }
 .yt-sub-label {
-    font-size: 12px; font-weight: 700; color: var(--text-muted);
-    margin: 16px 0 8px; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--text-primary);
+    padding-bottom: 9px; margin-bottom: 11px;
+    border-bottom: 2px solid var(--border); letter-spacing: .2px;
 }
 
-/* YouTube summary card */
+/* YouTube summary card — 2-column */
 .yt-summary-card {
     background: var(--bg-card); border: 1px solid var(--border);
-    border-left: 4px solid #FF0000; border-radius: var(--radius);
-    padding: 18px 22px; margin-bottom: 14px;
+    border-top: 3px solid #FF0000; border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 20px;
+    display: grid; grid-template-columns: 1fr 1.6fr; gap: 22px; align-items: start;
 }
-.yt-summary-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-.yt-summary-icon { font-size: 24px; }
-.yt-summary-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.yt-summary-topics { font-size: 11px; color: var(--accent-text); margin: 2px 0 0; font-weight: 600; }
-.yt-summary-desc { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 8px; line-height: 1.6; }
-.yt-summary-list { margin: 0; padding-left: 18px; }
-.yt-summary-list li { font-size: 12px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 2px; }
-.yt-summary-list li strong { color: var(--text-primary); font-weight: 600; }
+.yt-summary-left {} .yt-summary-right {}
+.yt-summary-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.yt-summary-icon { font-size: 24px; flex-shrink: 0; }
+.yt-summary-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0 0 3px; }
+.yt-summary-topics { font-size: 11px; color: var(--accent-text); margin: 0; font-weight: 600; }
+.yt-summary-desc { font-size: 12px; color: var(--text-muted); margin: 8px 0 0; line-height: 1.6; }
+.yt-summary-list { list-style: none; padding: 0; margin: 0; }
+.yt-summary-list li {
+    font-size: 12px; line-height: 1.7; color: var(--text-secondary);
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 5px;
+}
+.yt-summary-list li:last-child { border-bottom: none; }
+.yt-summary-list li strong { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
 
 /* ── divider ───────────────────────────────── */
 .section-divider {
@@ -910,25 +939,22 @@ def generate_daily_insights(payload: str) -> List[dict]:
         return []
     prompt = (
         "You are a global marketing strategist writing a premium daily brief.\n"
+        "You MUST write ALL text content in Korean (한국어). Do NOT use Chinese or any other language.\n"
         "Classify the news into exactly 3 fixed categories and write insight-focused analysis.\n"
         "Do NOT summarize headlines. Extract strategic patterns and interpret meaning.\n"
         "Tone: professional newsletter, concise consulting report.\n\n"
         "Categories:\n- Generative Engine Optimization\n- AI Automation in Marketing Execution\n- Marketing AI Trend\n\n"
         "Return ONLY valid JSON array with exactly 3 objects:\n"
-        '[{"title":"category","summary":"2-3 lines","key_points":["...","..."],'
+        '[{"title":"category","summary":"한국어 2-3 lines","key_points":["한국어...","한국어..."],'
         '"sources":[{"title":"...","link":"..."}],'
-        '"marketing_insight":"...","strategic_implication":"..."}]\n'
+        '"marketing_insight":"한국어...","strategic_implication":"한국어..."}]\n'
         "Rules: 3 sections only, 2-3 sources each from provided news, no markdown.\n\n"
         f"News:\n{payload}"
     )
     try:
-        res = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=25,
-        )
-        res.raise_for_status()
-        parsed = json.loads((res.json().get("response") or "").strip())
+        from ollama_client import ollama_generate
+        raw = ollama_generate(prompt, timeout=180, retries=1)
+        parsed = json.loads(raw)
         if isinstance(parsed, list) and len(parsed) == 3:
             ordered = []
             for cat in DAILY_DIGEST_CATEGORIES:
@@ -1033,7 +1059,7 @@ def render_ai_tools_section(tools: List[dict]) -> None:
         return
     st.markdown(
         """<div class="ai-tools-header">
-            <p class="ai-tools-label">New AI Tools</p>
+            <p class="ai-tools-label">신규 AI 툴 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></p>
             <div class="ai-tools-line"></div>
         </div>""",
         unsafe_allow_html=True,
@@ -1155,97 +1181,125 @@ def _get_youtube_videos() -> List[dict]:
         return []
 
 
-def _render_yt_summary(videos: List[dict]) -> None:
-    """Summary card for YouTube section."""
-    if len(videos) < 2:
-        return
-    bullets = ""
-    for v in videos[:6]:
-        channel = escape(v.get("source", ""))
-        title = escape(v.get("title", ""))
-        bullets += f"<li><strong>{channel}</strong> — {title}</li>\n"
-
-    all_text = " ".join((v.get("title") or "") + " " + (v.get("content") or "") for v in videos).lower()
-    kw_map = {
-        "AI 에이전트 / 자율 실행": ["agent", "agentic", "autonomous", "에이전트"],
-        "LLM 신규 모델": ["gpt", "claude", "gemini", "llama", "모델", "model"],
-        "AI 도구 & 생산성": ["tool", "productivity", "copilot", "도구", "생산성"],
-        "AI 코딩 & 개발": ["coding", "cursor", "vscode", "코딩", "개발"],
-        "AI 비즈니스": ["startup", "funding", "market", "비즈니스", "스타트업"],
-    }
-    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
-    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
-
-    st.markdown(f"""
-    <div class="yt-summary-card">
-        <div class="yt-summary-header">
-            <span class="yt-summary-icon">📺</span>
-            <div>
-                <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
-                <p class="yt-summary-topics">{topics_text}</p>
+def _yt_card_html_app(v: dict) -> str:
+    """Single YouTube card as HTML string."""
+    title = escape(v.get("title") or "")
+    link = escape(v.get("link") or "#")
+    channel = escape(v.get("source") or "YouTube")
+    desc = escape(v.get("content") or "")
+    thumb = escape(v.get("thumbnail") or "")
+    date_str = escape((v.get("published_str") or "")[:10])
+    new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
+    region = v.get("region", "global")
+    region_badge = (
+        '<span class="yt-region-badge yt-region-kr">KR</span>'
+        if region == "kr"
+        else '<span class="yt-region-badge yt-region-gl">EN</span>'
+    )
+    thumb_section = ""
+    if thumb:
+        thumb_section = (
+            f'<a href="{link}" target="_blank" class="yt-thumb-wrap">'
+            f'<img class="yt-thumb" src="{thumb}" alt="{title}" loading="lazy" '
+            f'onerror="this.parentElement.style.display=\'none\'">'
+            f'<div class="yt-play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>'
+            f'</a>'
+        )
+    return f"""
+    <div class="yt-card">
+        {thumb_section}
+        <div class="yt-body">
+            <div class="yt-channel-row">
+                <span class="yt-badge">▶ YouTube</span>
+                {region_badge}
+                <span class="yt-channel-name">{channel}</span>
+                {new_badge}
             </div>
+            <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
+            <p class="yt-desc">{desc}</p>
+            <p class="yt-meta">{date_str}</p>
         </div>
-        <p class="yt-summary-desc">최근 AI 크리에이터들이 다루고 있는 주요 영상입니다.</p>
-        <ul class="yt-summary-list">{bullets}</ul>
-    </div>""", unsafe_allow_html=True)
-
-
-def _render_yt_grid(videos: List[dict], label: str) -> None:
-    """Render a group of YouTube cards with a sub-label."""
-    if not videos:
-        return
-    st.markdown(f'<p class="yt-sub-label">{label}</p>', unsafe_allow_html=True)
-    for row_start in range(0, len(videos), 3):
-        row = videos[row_start:row_start + 3]
-        cols = st.columns(len(row), gap="medium")
-        for col_idx, v in enumerate(row):
-            title = escape(v.get("title") or "")
-            link = escape(v.get("link") or "#")
-            channel = escape(v.get("source") or "YouTube")
-            desc = escape(v.get("content") or "")
-            thumb = v.get("thumbnail") or ""
-            date_str = escape((v.get("published_str") or "")[:10])
-            new_badge = '<span class="yt-new-badge">NEW</span>' if v.get("is_new") else ""
-            region = v.get("region", "global")
-            region_badge = (
-                '<span class="yt-region-badge yt-region-kr">KR</span>'
-                if region == "kr"
-                else '<span class="yt-region-badge yt-region-gl">EN</span>'
-            )
-            thumb_html = (
-                f'<a href="{link}" target="_blank">'
-                f'<img class="yt-thumb" src="{escape(thumb)}" alt="{title}" '
-                f'onerror="this.style.display=\'none\'"></a>'
-            ) if thumb else ""
-            with cols[col_idx]:
-                st.markdown(f"""
-                <div class="yt-card">
-                    {thumb_html}
-                    <div class="yt-body">
-                        <div class="yt-channel-row">
-                            <span class="yt-badge">▶ YouTube</span>
-                            {region_badge}
-                            <span class="yt-channel-name">{channel}</span>
-                            {new_badge}
-                        </div>
-                        <h3 class="yt-title"><a href="{link}" target="_blank">{title}</a></h3>
-                        <p class="yt-desc">{desc}</p>
-                        <p class="yt-meta">{date_str}</p>
-                    </div>
-                </div>""", unsafe_allow_html=True)
+    </div>"""
 
 
 def render_youtube_section() -> None:
+    """Render the full YouTube section as a single HTML block."""
     videos = _get_youtube_videos()
     if not videos:
         return
+
     global_vids = [v for v in videos if v.get("region") != "kr"][:8]
-    kr_vids = [v for v in videos if v.get("region") == "kr"][:8]
+    kr_vids     = [v for v in videos if v.get("region") == "kr"][:8]
+
+    # ── summary card ────────────────────────────────────
+    all_text = " ".join(
+        (v.get("title") or "") + " " + (v.get("content") or "") for v in videos
+    ).lower()
+    kw_map = {
+        "AI 에이전트·자율실행": ["agent", "agentic", "autonomous", "에이전트"],
+        "LLM 신규 모델 출시":  ["gpt", "claude", "gemini", "llama", "모델", "model"],
+        "AI 도구 & 생산성":    ["tool", "productivity", "copilot", "도구", "생산성"],
+        "AI 코딩 & 개발":      ["coding", "cursor", "vscode", "코딩", "개발"],
+        "AI 비즈니스 트렌드":  ["startup", "funding", "market", "비즈니스", "스타트업"],
+    }
+    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
+    topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
+    gl_cnt, kr_cnt = len(global_vids), len(kr_vids)
+    desc_text = (
+        f"해외 크리에이터 {gl_cnt}편, 국내 크리에이터 {kr_cnt}편 수집 완료. "
+        "AI 커뮤니티에서 주목받는 주제를 선별했습니다."
+    )
+    bullets = ""
+    for v in (global_vids + kr_vids)[:6]:
+        flag = "🇰🇷" if v.get("region") == "kr" else "🌎"
+        bullets += (
+            f'<li><strong>{flag} {escape(v.get("source",""))}</strong>'
+            f' — {escape(v.get("title",""))}</li>\n'
+        )
+
+    summary_html = f"""
+    <div class="yt-summary-card">
+        <div class="yt-summary-left">
+            <div class="yt-summary-header">
+                <span class="yt-summary-icon">📺</span>
+                <div>
+                    <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
+                    <p class="yt-summary-topics">{topics_text}</p>
+                </div>
+            </div>
+            <p class="yt-summary-desc">{desc_text}</p>
+        </div>
+        <div class="yt-summary-right">
+            <ul class="yt-summary-list">{bullets}</ul>
+        </div>
+    </div>"""
+
+    # ── video grids ──────────────────────────────────────
+    global_grid = ""
+    if global_vids:
+        cards = "".join(_yt_card_html_app(v) for v in global_vids)
+        global_grid = f"""
+        <div class="yt-sub-section">
+            <p class="yt-sub-label">🌎 해외 크리에이터</p>
+            <div class="yt-grid">{cards}</div>
+        </div>"""
+
+    kr_grid = ""
+    if kr_vids:
+        cards = "".join(_yt_card_html_app(v) for v in kr_vids)
+        kr_grid = f"""
+        <div class="yt-sub-section">
+            <p class="yt-sub-label">🇰🇷 국내 크리에이터</p>
+            <div class="yt-grid">{cards}</div>
+        </div>"""
 
     st.markdown('<p class="section-lbl">AI 크리에이터 영상</p>', unsafe_allow_html=True)
-    _render_yt_summary(videos)
-    _render_yt_grid(global_vids, "🌎 해외 크리에이터")
-    _render_yt_grid(kr_vids, "🇰🇷 국내 크리에이터")
+    st.markdown(f"""
+    <div class="yt-section">
+        {summary_html}
+        {global_grid}
+        {kr_grid}
+    </div>""", unsafe_allow_html=True)
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 
@@ -1456,13 +1510,8 @@ def _generate_period_report(items: List[dict], period: str) -> dict:
     prompt = prompt_tpl.format(count=len(items), payload=payload)
 
     try:
-        res = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=40,
-        )
-        res.raise_for_status()
-        raw = (res.json().get("response") or "").strip()
+        from ollama_client import ollama_generate
+        raw = ollama_generate(prompt, timeout=180, retries=1)
         parsed = json.loads(raw)
         if isinstance(parsed, dict) and "trend_sections" in parsed:
             parsed["generated_at"] = datetime.now(KST).isoformat()

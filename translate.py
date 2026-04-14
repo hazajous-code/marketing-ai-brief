@@ -10,7 +10,7 @@ import re
 from functools import lru_cache
 from typing import List, Protocol, Tuple
 
-import requests as _requests
+from ollama_client import ollama_generate
 
 LANGUAGE_MAP = {
     "Original": "en",
@@ -20,8 +20,7 @@ LANGUAGE_MAP = {
 _LANG_NAMES = {"ko": "Korean", "en": "English", "ja": "Japanese", "zh": "Chinese"}
 WHITESPACE_REGEX = re.compile(r"\s+")
 
-_OLLAMA_MODEL = "llama3.1:8b"
-_OLLAMA_URL = "http://localhost:11434/api/generate"
+_MAX_BATCH = 8
 
 
 class TranslatorBackend(Protocol):
@@ -39,16 +38,7 @@ class OllamaTranslatorBackend:
             "Return ONLY the translated text, nothing else.\n\n"
             f"{text}"
         )
-        resp = _requests.post(
-            _OLLAMA_URL,
-            json={"model": _OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=60,
-        )
-        resp.raise_for_status()
-        result = resp.json().get("response", "").strip()
-        if not result:
-            raise ValueError("Empty Ollama response")
-        return result
+        return ollama_generate(prompt, timeout=60, retries=1)
 
 
 TRANSLATOR_BACKEND: TranslatorBackend = OllamaTranslatorBackend()
@@ -90,10 +80,35 @@ def translate_text(text: str, target_lang: str) -> str:
 _batch_cache: dict[tuple, List[str]] = {}
 
 
-def translate_batch(texts: List[str], target_lang: str) -> List[str]:
-    """Translate multiple texts in a single Ollama call.
+def _translate_chunk(texts: List[str], target_lang: str) -> List[str]:
+    """Translate a single chunk (up to _MAX_BATCH) via one Ollama call."""
+    lang_name = _LANG_NAMES.get(target_lang, target_lang)
+    numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts) if t)
+    prompt = (
+        f"Translate each numbered line to {lang_name}. "
+        "Return ONLY the translations, one per line, keeping the same numbering.\n\n"
+        f"{numbered}"
+    )
+    raw = ollama_generate(prompt, timeout=60, retries=1)
+    lines = [re.sub(r"^\d+\.\s*", "", ln).strip()
+             for ln in raw.splitlines() if ln.strip()]
 
-    Much faster than N individual calls (~20s total vs 20s × N).
+    results: List[str] = []
+    line_idx = 0
+    for t in texts:
+        if not t:
+            results.append("")
+        elif line_idx < len(lines):
+            results.append(lines[line_idx])
+            line_idx += 1
+        else:
+            results.append(t)
+    return results
+
+
+def translate_batch(texts: List[str], target_lang: str) -> List[str]:
+    """Translate multiple texts via Ollama, chunked to _MAX_BATCH per call.
+
     Results are cached so repeated calls return instantly.
     """
     if not texts or target_lang == "en":
@@ -104,37 +119,13 @@ def translate_batch(texts: List[str], target_lang: str) -> List[str]:
     if cache_key in _batch_cache:
         return _batch_cache[cache_key]
 
-    lang_name = _LANG_NAMES.get(target_lang, target_lang)
-    numbered = "\n".join(f"{i+1}. {n}" for i, n in enumerate(normed) if n)
-    prompt = (
-        f"Translate each numbered line to {lang_name}. "
-        "Return ONLY the translations, one per line, keeping the same numbering.\n\n"
-        f"{numbered}"
-    )
-    try:
-        resp = _requests.post(
-            _OLLAMA_URL,
-            json={"model": _OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=45,
-        )
-        resp.raise_for_status()
-        raw = resp.json().get("response", "").strip()
-        lines = [re.sub(r"^\d+\.\s*", "", ln).strip()
-                 for ln in raw.splitlines() if ln.strip()]
-        results = []
-        line_idx = 0
-        for n in normed:
-            if not n:
-                results.append("")
-            elif line_idx < len(lines):
-                results.append(lines[line_idx])
-                line_idx += 1
-            else:
-                results.append(n)
-    except Exception:
-        results = list(normed)
+    all_results: List[str] = []
+    for start in range(0, len(normed), _MAX_BATCH):
+        chunk = normed[start:start + _MAX_BATCH]
+        try:
+            all_results.extend(_translate_chunk(chunk, target_lang))
+        except Exception:
+            all_results.extend(chunk)
 
-    _batch_cache[cache_key] = results
-    return results
-
-
+    _batch_cache[cache_key] = all_results
+    return all_results

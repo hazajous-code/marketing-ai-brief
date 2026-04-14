@@ -385,37 +385,31 @@ def _fallback_three_insights(articles: List[dict]) -> List[dict]:
 
 def _generate_three_marketing_insights(articles: List[dict]) -> List[dict]:
     """LLM: exactly 3 insight points from today's collected articles (Korean)."""
-    import requests as _req
+    from ollama_client import ollama_generate
 
     if not articles:
         return _fallback_three_insights([])
 
     lines = []
-    for a in articles[:14]:
+    for a in articles[:12]:
         t = (a.get("title") or "")[:110]
-        s = ((a.get("content") or "")[:100]).replace("\n", " ")
-        lines.append(f"- {t} | {s}")
+        lines.append(f"- {t}")
     payload = "\n".join(lines)
 
     prompt = (
-        "당신은 글로벌 마케팅 전략 컨설턴트입니다.\n"
-        "아래 기사 목록을 바탕으로, 마케팅 전문가에게 실질적으로 유용한 인사이트 3개를 작성하세요.\n\n"
-        "규칙:\n"
-        "- 단순 기사 요약이나 사실 나열 금지. 반드시 '이 상황이 마케터에게 무엇을 의미하는가' 해석 중심으로 작성.\n"
-        "- 각 포인트는 서로 다른 관점(예: AI 광고·자동화 / 플랫폼·미디어 변화 / 브랜드·고객전략).\n"
-        "- body는 3~4문장. 구체적이고 전략적인 언어로.\n"
-        "- evidence에는 위 목록에서 해당 인사이트의 근거가 되는 기사 제목(또는 출처명)을 1~3개.\n\n"
-        '출력: JSON 배열만(설명 없이): [{"title":"한 줄 인사이트 제목(한국어)","body":"3~4문장 해석(한국어)","evidence":["기사제목1","기사제목2"]}]\n\n'
-        f"기사:\n{payload}"
+        "You are a global marketing strategy consultant. "
+        "You MUST write ALL output in Korean (한국어). Do NOT use Chinese or any other language.\n\n"
+        "Based on the articles below, write exactly 3 marketing insights.\n\n"
+        "Rules:\n"
+        "- No simple article summaries. Interpret what it means for marketers.\n"
+        "- Each point covers a different angle (e.g. AI ads/automation, platform/media shifts, brand/customer strategy).\n"
+        "- body: 3-4 sentences in Korean. Strategic and specific.\n"
+        "- evidence: 1-3 article titles from the list below.\n\n"
+        'Output ONLY a JSON array: [{"title":"한국어 인사이트 제목","body":"한국어 3-4문장","evidence":["기사제목1"]}]\n\n'
+        f"Articles:\n{payload}"
     )
     try:
-        res = _req.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=60,
-        )
-        res.raise_for_status()
-        raw = res.json().get("response", "").strip()
+        raw = ollama_generate(prompt, timeout=180, retries=1)
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if match:
             parsed = json.loads(match.group())
@@ -504,7 +498,7 @@ def _localize_articles_display(articles: List[dict], limit: int) -> List[dict]:
 
 def _generate_period_report(items: List[dict], period: str) -> dict:
     """Generate a weekly or monthly report via Ollama. Returns report dict."""
-    import requests as _req
+    from ollama_client import ollama_generate
 
     max_items = 15 if period == "monthly" else 10
     titles = "\n".join(
@@ -514,22 +508,17 @@ def _generate_period_report(items: List[dict], period: str) -> dict:
 
     period_kr = "월간" if period == "monthly" else "주간"
     prompt = (
-        f"{len(items)}개 기사를 분석해 {period_kr} 마케팅 AI 리포트를 작성하세요.\n"
-        "3개 카테고리별로 정리: 1)Generative Engine Optimization 2)AI Automation in Marketing Execution 3)Marketing AI Trend\n"
-        'JSON 형식: {"period":"' + period + '","headline":"한줄 제목","executive_summary":"3줄 요약",'
-        '"trend_sections":[{"category":"카테고리명","summary":"2줄","key_points":["핵심1","핵심2"],"notable_sources":["출처"]}],'
-        '"strategic_outlook":"전망 2줄"}\n'
-        f"기사목록:\n{titles}"
+        f"You are a marketing AI analyst. Write ALL output in Korean (한국어). Do NOT use Chinese.\n"
+        f"Analyze {len(items)} articles and write a {period_kr} marketing AI report.\n"
+        "Organize into 3 categories: 1)Generative Engine Optimization 2)AI Automation in Marketing Execution 3)Marketing AI Trend\n"
+        'JSON format: {"period":"' + period + '","headline":"한국어 한줄 제목","executive_summary":"한국어 3줄 요약",'
+        '"trend_sections":[{"category":"카테고리명","summary":"한국어 2줄","key_points":["한국어 핵심1","한국어 핵심2"],"notable_sources":["출처"]}],'
+        '"strategic_outlook":"한국어 전망 2줄"}\n'
+        f"Articles:\n{titles}"
     )
 
     try:
-        res = _req.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "llama3.1:8b", "prompt": prompt, "stream": False},
-            timeout=300,
-        )
-        res.raise_for_status()
-        raw = (res.json().get("response") or "").strip()
+        raw = ollama_generate(prompt, timeout=120, retries=2)
         match = re.search(r"\{.*\}", raw, re.DOTALL)
         if match:
             parsed = json.loads(match.group())
@@ -612,7 +601,7 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
             <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span>{new_badge}<span>{source}</span></div>
         </div>"""
     return f"""
-    <div class="ai-tools-header"><span class="ai-tools-label">신규 AI 툴</span><div class="ai-tools-line"></div></div>
+    <div class="ai-tools-header"><span class="ai-tools-label">신규 AI 툴 <span style="background:#E8590C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:6px;letter-spacing:.5px;vertical-align:middle">NEW</span></span><div class="ai-tools-line"></div></div>
     <div class="ai-tools-grid">{cards}</div>"""
 
 
@@ -701,78 +690,95 @@ def _yt_card_html(v: dict) -> str:
 
 
 def _yt_summary_html(videos: List[dict]) -> str:
-    """Generate a summary card from YouTube video titles — rule-based (no LLM)."""
+    """Summary panel: 2-column (meta left / video list right) — rule-based, no LLM."""
     if len(videos) < 2:
         return ""
-    global_vids = [v for v in videos if v.get("region") != "kr"]
-    kr_vids = [v for v in videos if v.get("region") == "kr"]
 
-    bullets = []
-    for v in (global_vids + kr_vids)[:6]:
-        channel = escape(v.get("source", ""))
-        title = escape(v.get("title", ""))
-        bullets.append(f"<li><strong>{channel}</strong> — {title}</li>")
-    bullet_html = "\n".join(bullets)
-
-    topics: list[str] = []
-    all_text = " ".join((v.get("title") or "") + " " + (v.get("content") or "") for v in videos).lower()
+    all_text = " ".join(
+        (v.get("title") or "") + " " + (v.get("content") or "") for v in videos
+    ).lower()
     kw_map = {
-        "AI 에이전트 / 자율 실행": ["agent", "agentic", "autonomous", "에이전트"],
+        "AI 에이전트·자율실행": ["agent", "agentic", "autonomous", "에이전트"],
         "LLM 신규 모델 출시": ["gpt", "claude", "gemini", "llama", "모델", "model"],
         "AI 도구 & 생산성": ["tool", "productivity", "copilot", "workflow", "도구", "생산성"],
         "AI 규제 & 윤리": ["regulation", "safety", "alignment", "규제", "윤리", "안전"],
         "AI 코딩 & 개발": ["coding", "cursor", "vscode", "코딩", "개발", "프로그래밍"],
         "AI 비즈니스 트렌드": ["startup", "funding", "market", "business", "비즈니스", "스타트업"],
     }
-    for label, kws in kw_map.items():
-        if any(kw in all_text for kw in kws):
-            topics.append(label)
+    topics = [label for label, kws in kw_map.items() if any(kw in all_text for kw in kws)]
     topics_text = " · ".join(topics[:4]) if topics else "AI 기술 동향"
+
+    global_vids = [v for v in videos if v.get("region") != "kr"]
+    kr_vids     = [v for v in videos if v.get("region") == "kr"]
+    gl_count    = len(global_vids)
+    kr_count    = len(kr_vids)
+    desc = (
+        f"해외 크리에이터 {gl_count}편, 국내 크리에이터 {kr_count}편을 수집했습니다. "
+        "최근 AI 커뮤니티에서 주목받는 주제를 중심으로 엄선했습니다."
+    )
+
+    bullets = []
+    for v in (global_vids + kr_vids)[:6]:
+        channel = escape(v.get("source", ""))
+        title   = escape(v.get("title", ""))
+        region  = v.get("region", "global")
+        flag    = "🇰🇷" if region == "kr" else "🌎"
+        bullets.append(f"<li><strong>{flag} {channel}</strong> — {title}</li>")
+    bullet_html = "\n".join(bullets)
 
     return f"""
     <div class="yt-summary-card">
-        <div class="yt-summary-header">
-            <span class="yt-summary-icon">📺</span>
-            <div>
-                <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
-                <p class="yt-summary-topics">{topics_text}</p>
+        <div class="yt-summary-left">
+            <div class="yt-summary-header">
+                <span class="yt-summary-icon">📺</span>
+                <div>
+                    <p class="yt-summary-title">AI 크리에이터 주간 토픽</p>
+                    <p class="yt-summary-topics">{topics_text}</p>
+                </div>
             </div>
+            <p class="yt-summary-desc">{desc}</p>
         </div>
-        <p class="yt-summary-desc">최근 AI 크리에이터들이 다루고 있는 주요 영상입니다.</p>
-        <ul class="yt-summary-list">{bullet_html}</ul>
+        <div class="yt-summary-right">
+            <ul class="yt-summary-list">{bullet_html}</ul>
+        </div>
     </div>"""
 
 
 def _render_youtube_section(videos: List[dict]) -> str:
-    """YouTube section: summary + global/kr split grids."""
+    """YouTube section wrapped in a single box: summary + global/kr grids."""
     if not videos:
         return ""
 
     global_vids = [v for v in videos if v.get("region") != "kr"][:8]
-    kr_vids = [v for v in videos if v.get("region") == "kr"][:8]
+    kr_vids     = [v for v in videos if v.get("region") == "kr"][:8]
 
     summary = _yt_summary_html(videos)
 
-    global_cards = "".join(_yt_card_html(v) for v in global_vids)
-    kr_cards = "".join(_yt_card_html(v) for v in kr_vids)
-
     global_section = ""
-    if global_cards:
+    if global_vids:
+        cards = "".join(_yt_card_html(v) for v in global_vids)
         global_section = f"""
-        <p class="yt-sub-label">🌎 해외 크리에이터</p>
-        <div class="yt-grid">{global_cards}</div>"""
+        <div class="yt-sub-section">
+            <p class="yt-sub-label">🌎 해외 크리에이터</p>
+            <div class="yt-grid">{cards}</div>
+        </div>"""
 
     kr_section = ""
-    if kr_cards:
+    if kr_vids:
+        cards = "".join(_yt_card_html(v) for v in kr_vids)
         kr_section = f"""
-        <p class="yt-sub-label">🇰🇷 국내 크리에이터</p>
-        <div class="yt-grid">{kr_cards}</div>"""
+        <div class="yt-sub-section">
+            <p class="yt-yt-sub-label yt-sub-label">🇰🇷 국내 크리에이터</p>
+            <div class="yt-grid">{cards}</div>
+        </div>"""
 
     return f"""
     <p class="section-label">AI 크리에이터 영상</p>
-    {summary}
-    {global_section}
-    {kr_section}"""
+    <div class="yt-section">
+        {summary}
+        {global_section}
+        {kr_section}
+    </div>"""
 
 
 def _render_article_cards(articles: List[dict], limit: int = 18) -> str:

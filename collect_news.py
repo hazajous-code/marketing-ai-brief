@@ -44,6 +44,18 @@ EN_KEYWORD_FILTERS: Tuple[str, ...] = (
     "AI content marketing",
     "martech AI",
     "CMO artificial intelligence",
+    "programmatic advertising",
+    "customer data platform",
+    "attribution model",
+    "AI personalization",
+    "predictive analytics marketing",
+    "AI customer experience",
+    "conversational AI",
+    "marketing analytics",
+    "AI SEO",
+    "AI copywriting",
+    "creative automation",
+    "media mix model",
 )
 
 EN_INSIGHT_KEYWORDS: Tuple[str, ...] = (
@@ -59,12 +71,16 @@ EN_INSIGHT_KEYWORDS: Tuple[str, ...] = (
 
 EN_PREFERRED_SOURCES: Tuple[str, ...] = (
     # Tech / Platform
-    "openai", "google", "meta", "adweek",
-    "marketingdive", "techcrunch", "arxiv",
+    "openai", "google", "meta", "adweek", "microsoft",
+    "marketingdive", "techcrunch", "arxiv", "venturebeat",
     # Research & Consulting
     "hbr", "mckinsey", "bcg", "deloitte", "forrester",
     "kantar", "nielsen", "gartner", "ipsos", "pwc",
     "accenture", "bain", "sloan", "warc", "wpp",
+    "emarketer", "adexchanger", "mediapost",
+    # Trade press
+    "digiday", "thedrum", "campaign", "martech",
+    "cmswire", "socialmediatoday", "stanford", "brookings",
 )
 
 # ── keyword config (Korean) ──────────────────────────────────────────
@@ -90,25 +106,35 @@ KO_PREFERRED_SOURCES: Tuple[str, ...] = (
 
 # ── feed URLs ───────────────────────────────────────────────────────
 EN_SOURCE_FEEDS: Tuple[str, ...] = (
+    # Big Tech AI blogs
     "https://openai.com/news/rss.xml",
     "https://blog.google/technology/ai/rss/",
     "https://ai.meta.com/blog/rss/",
+    "https://blogs.microsoft.com/ai/feed/",
+    "https://aws.amazon.com/blogs/machine-learning/feed/",
+    # Advertising & Marketing trade press
     "https://www.adweek.com/feed/",
     "https://www.marketingdive.com/feeds/news/",
+    "https://digiday.com/feed/",
+    "https://searchengineland.com/feed",
+    "https://martech.org/feed/",
+    "https://www.cmswire.com/feed/",
+    "https://www.socialmediatoday.com/feed/",
+    # Tech press
     "https://techcrunch.com/category/artificial-intelligence/feed/",
     "https://techcrunch.com/tag/advertising-tech/feed/",
     "https://techcrunch.com/tag/e-commerce/feed/",
-    # Expanded sources
     "https://venturebeat.com/category/ai/feed/",
     "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-    "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
-    "https://www.wired.com/feed/category/business/latest/rss",
     "https://www.technologyreview.com/feed/",
+    "https://www.wired.com/feed/category/business/latest/rss",
+    "https://arstechnica.com/ai/feed/",
+    # Business & strategy
+    "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
     "https://www.businessinsider.com/sai/rss",
-    "https://digiday.com/feed/",
     "https://www.emarketer.com/rss.xml",
-    "https://searchengineland.com/feed",
-    "https://martechtoday.com/feed",
+    "https://www.thedrum.com/feeds/all/rss.xml",
+    "https://www.campaignlive.co.uk/feed",
 )
 
 KO_SOURCE_FEEDS: Tuple[str, ...] = (
@@ -138,7 +164,8 @@ def _ko_site_google_feeds() -> Tuple[str, ...]:
 RESEARCH_FEEDS_DIRECT: Tuple[str, ...] = (
     "https://sloanreview.mit.edu/feed/",                # MIT Sloan — works
     "https://www.ipsos.com/en/rss.xml",                 # Ipsos — works
-    "https://www.marketingdive.com/feeds/news/",        # MarketingDive — works
+    "https://hai.stanford.edu/news/rss.xml",            # Stanford HAI
+    "https://www.brookings.edu/topic/artificial-intelligence/feed/", # Brookings AI
 )
 
 # Many research sites block/break their RSS. Use Google News site: as proxy.
@@ -157,6 +184,11 @@ _RESEARCH_SITES: Tuple[str, ...] = (
     "warc.com",             # WARC
     "bain.com",             # Bain & Company
     "wpp.com",              # WPP
+    "emarketer.com",        # eMarketer / Insider Intelligence
+    "adexchanger.com",      # AdExchanger
+    "mediapost.com",        # MediaPost
+    "chiefmartec.com",      # Chief Martec (MarTech landscape)
+    "hubspot.com/marketing",  # HubSpot research
 )
 
 
@@ -234,7 +266,7 @@ _SOURCE_PRIORITY: Dict[str, int] = {
     # Tier 0: Academic preprints
     "arxiv.org": 0, "export.arxiv.org": 0,
 }
-_TIER_DOMAIN_CAP: Dict[int, int] = {3: 4, 2: 4, 1: 3, 0: 1}
+_TIER_DOMAIN_CAP: Dict[int, int] = {3: 5, 2: 4, 1: 3, 0: 2}
 _ARXIV_TOTAL_CAP = 2  # hard ceiling: at most 2 arXiv papers in the final list
 
 
@@ -391,7 +423,7 @@ def _fetch_entries(url: str) -> List[Any]:
 
 
 # ── main collector ──────────────────────────────────────────────────
-def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 50) -> List[Dict[str, Any]]:
+def fetch_rss_news(feed_urls: Tuple[str, ...], limit: int = 60) -> List[Dict[str, Any]]:
     if not feed_urls or limit <= 0:
         return []
 
