@@ -115,7 +115,7 @@ def translate_batch(texts: List[str], target_lang: str) -> List[str]:
         resp = _requests.post(
             _OLLAMA_URL,
             json={"model": _OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=90,
+            timeout=150,
         )
         resp.raise_for_status()
         raw = resp.json().get("response", "").strip()

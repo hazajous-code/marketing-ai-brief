@@ -496,7 +496,7 @@ def _ai_tool_score(title: str, content: str, source: str) -> int:
     return score
 
 
-def fetch_ai_tools_news(limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_ai_tools_news(limit: int = 10, content_max: int = 520) -> List[Dict[str, Any]]:
     """Collect recent AI tool launches from dedicated feeds."""
     now = datetime.now(timezone.utc)
     collected: List[Dict[str, Any]] = []
@@ -545,7 +545,7 @@ def fetch_ai_tools_news(limit: int = 10) -> List[Dict[str, Any]]:
                     "source": source,
                     "published_at": pub,
                     "published_str": pub.strftime("%Y-%m-%d %H:%M UTC"),
-                    "content": content[:300],
+                    "content": content[:content_max],
                     "is_new": now - pub <= timedelta(hours=24),
                     "lang": "ko" if korean else "en",
                     "is_ai_tool": True,

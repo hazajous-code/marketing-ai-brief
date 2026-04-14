@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import subprocess
 from collections import Counter
@@ -32,6 +33,101 @@ _REPORT_FILE = _PROJECT_ROOT / "data" / "generated_reports.json"
 _CSS_REL_PATH = "../style.css"
 _CSS_INDEX_PATH = "style.css"
 _CSS_REPORTS_REL = "../style.css"
+
+
+def _load_dotenv_for_build() -> None:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_PROJECT_ROOT / ".env")
+    except Exception:
+        pass
+
+
+def _active_subscriber_count() -> int | None:
+    try:
+        from mailer import get_active_emails
+        n = len(get_active_emails())
+        return n if n > 0 else None
+    except Exception:
+        return None
+
+
+def _subscribe_banner_html() -> str:
+    """Subscribe banner + email field. Formspree / Streamlit URL / mailto from env at build time."""
+    _load_dotenv_for_build()
+    formspree = os.environ.get("MARKETING_BRIEF_FORMSPREE_ACTION", "").strip()
+    streamlit = os.environ.get("MARKETING_BRIEF_STREAMLIT_URL", "").strip()
+    mailto = os.environ.get("MARKETING_BRIEF_SUBSCRIBE_MAILTO", "").strip()
+    pages_next = os.environ.get("MARKETING_BRIEF_PAGES_URL", "").strip()
+
+    count = _active_subscriber_count()
+    count_html = f'<p class="sub-count">{count}명 구독 중</p>' if count else ""
+
+    if formspree:
+        next_hidden = (
+            f'<input type="hidden" name="_next" value="{escape(pages_next)}" />'
+            if pages_next else ""
+        )
+        form_block = f"""
+        <form class="subscribe-form subscribe-form--post" action="{escape(formspree)}" method="POST">
+            <input type="hidden" name="_subject" value="Marketing AI Brief 구독 신청" />
+            {next_hidden}
+            <input type="email" name="email" class="sub-email-input" placeholder="your-email@company.com"
+                   required autocomplete="email" aria-label="구독 이메일" />
+            <button type="submit" class="sub-submit-btn">🔔 구독하기</button>
+        </form>"""
+    else:
+        cfg = json.dumps({"streamlit": streamlit, "mailto": mailto}, ensure_ascii=False)
+        form_block = f"""
+        <div class="subscribe-form subscribe-form--js">
+            <input type="email" class="sub-email-input" placeholder="your-email@company.com"
+                   autocomplete="email" aria-label="구독 이메일" />
+            <button type="button" class="sub-submit-btn">🔔 구독하기</button>
+        </div>
+        <script type="application/json" id="subscribe-cfg-json">{cfg}</script>
+        <script>
+        (function() {{
+          var j = document.getElementById('subscribe-cfg-json');
+          if (!j) return;
+          var cfg = {{}};
+          try {{ cfg = JSON.parse(j.textContent); }} catch (e) {{ return; }}
+          var root = j.previousElementSibling;
+          if (!root || !root.classList.contains('subscribe-form--js')) return;
+          var inp = root.querySelector('.sub-email-input');
+          var btn = root.querySelector('.sub-submit-btn');
+          if (!inp || !btn) return;
+          btn.addEventListener('click', function() {{
+            var e = (inp.value || '').trim();
+            if (!e) {{ alert('이메일을 입력해 주세요.'); return; }}
+            if (cfg.streamlit) {{
+              var u = cfg.streamlit + (cfg.streamlit.indexOf('?') > -1 ? '&' : '?') +
+                'subscribe_email=' + encodeURIComponent(e);
+              window.open(u, '_blank');
+              return;
+            }}
+            if (cfg.mailto) {{
+              window.location.href = 'mailto:' + cfg.mailto +
+                '?subject=' + encodeURIComponent('[Marketing AI Brief] 구독 신청') +
+                '&body=' + encodeURIComponent('구독 이메일: ' + e);
+              return;
+            }}
+            alert('구독 처리 URL이 빌드 시 설정되지 않았습니다. 담당자에게 문의하거나, ' +
+              'MARKETING_BRIEF_FORMSPREE_ACTION / MARKETING_BRIEF_STREAMLIT_URL / MARKETING_BRIEF_SUBSCRIBE_MAILTO를 설정한 뒤 publish.py를 다시 실행하세요.');
+          }});
+        }})();
+        </script>"""
+
+    return f"""
+    <div class="subscribe-banner js-subscribe-root">
+        <div class="sub-icon">📮</div>
+        <div class="sub-copy">
+            <p class="sub-title">매일 오전 9시, 마케팅 AI 인사이트를 받아보세요</p>
+            <p class="sub-desc">데일리 브리프를 이메일로 보내드립니다 — 무료 구독</p>
+            {count_html}
+        </div>
+        {form_block}
+    </div>"""
+
 
 # ── data helpers ─────────────────────────────────────────────────────
 
@@ -78,12 +174,13 @@ def _articles_for_range(start: str, end: str) -> List[dict]:
     return items
 
 
-def _load_digest_for_date(date_str: str) -> List[dict]:
+def _load_insights_for_date(date_str: str) -> List[dict]:
+    """Load 3-point marketing insights for a date (Korean, from today's articles)."""
     try:
         if _REPORT_FILE.exists():
             reports = json.loads(_REPORT_FILE.read_text(encoding="utf-8"))
-            key = f"daily-{date_str}"
-            if key in reports and isinstance(reports[key], list):
+            key = f"insights-{date_str}"
+            if key in reports and isinstance(reports[key], list) and len(reports[key]) == 3:
                 return reports[key]
     except Exception:
         pass
@@ -123,11 +220,11 @@ def _get_ai_tools_for_date(date_str: str) -> List[dict]:
 
 # ── LLM helpers ──────────────────────────────────────────────────────
 
-def _fetch_live_ai_tools(limit: int = 6) -> List[dict]:
+def _fetch_live_ai_tools(limit: int = 8) -> List[dict]:
     """Fetch AI tool news live (for index page which needs fresh data)."""
     try:
         from collect_news import fetch_ai_tools_news
-        tools = fetch_ai_tools_news(limit=limit)
+        tools = fetch_ai_tools_news(limit=limit, content_max=520)
         for t in tools:
             if isinstance(t.get("published_at"), datetime):
                 t["published_at"] = t["published_at"].isoformat()
@@ -137,21 +234,58 @@ def _fetch_live_ai_tools(limit: int = 6) -> List[dict]:
         return []
 
 
-def _generate_digest(articles: List[dict]) -> List[dict]:
+_HANGUL_RE = re.compile(r"[\u3130-\u318F\uAC00-\uD7A3]")
+
+
+def _has_korean(text: str) -> bool:
+    return bool(_HANGUL_RE.search(text or ""))
+
+
+def _fallback_three_insights(articles: List[dict]) -> List[dict]:
+    """Rule-based Korean 3 points when LLM is unavailable."""
+    out: List[dict] = []
+    for i, a in enumerate(articles[:3]):
+        tit = (a.get("title") or "")[:100]
+        sn = ((a.get("content") or "")[:200]).strip()
+        body = (
+            f"오늘 수집된 기사 중 「{tit}」 흐름이 마케팅·AI 담론에서 두드러집니다. "
+            f"{sn[:120]}…" if sn else f"「{tit}」 관련 동향이 시장 논의에 반영되고 있습니다."
+        )
+        out.append({
+            "title": f"포인트 {i + 1}: 핵심 이슈",
+            "body": body,
+            "evidence": [tit[:80]],
+        })
+    while len(out) < 3:
+        out.append({
+            "title": f"포인트 {len(out) + 1}",
+            "body": "오늘 수집된 뉴스를 바탕으로 마케팅 AI·디지털 전략 동향을 지속 모니터링하고 있습니다.",
+            "evidence": [],
+        })
+    return out[:3]
+
+
+def _generate_three_marketing_insights(articles: List[dict]) -> List[dict]:
+    """LLM: exactly 3 insight points from today's collected articles (Korean)."""
     import requests as _req
 
-    CATEGORIES = [
-        "Generative Engine Optimization",
-        "AI Automation in Marketing Execution",
-        "Marketing AI Trend",
-    ]
-    titles = "\n".join(f"- {a.get('title', '')}" for a in articles[:8])
+    if not articles:
+        return _fallback_three_insights([])
+
+    lines = []
+    for a in articles[:14]:
+        t = (a.get("title") or "")[:110]
+        s = ((a.get("content") or "")[:100]).replace("\n", " ")
+        lines.append(f"- {t} | {s}")
+    payload = "\n".join(lines)
 
     prompt = (
-        "Classify these news into 3 categories. Write in Korean.\n"
-        "Categories: 1) Generative Engine Optimization 2) AI Automation in Marketing Execution 3) Marketing AI Trend\n"
-        'Return JSON: [{"title":"category","summary":"2줄 요약","key_points":["핵심1","핵심2"],"marketing_insight":"인사이트","strategic_implication":"시사점"}]\n'
-        f"News:\n{titles}"
+        "아래는 오늘(또는 해당일) 수집된 뉴스·기사 제목과 짧은 요약입니다.\n"
+        "이 목록에 실제로 등장한 내용만 근거로, 마케팅 담당자에게 유용한 인사이트를 정확히 3개 작성하세요.\n"
+        "각 포인트는 서로 다른 관점(예: 광고·미디어, AI·자동화, 브랜드·고객경험 등)을 다루세요.\n"
+        '반드시 JSON 배열만 출력(설명 금지): [{"title":"한 줄 제목(한국어)","body":"2~4문장(한국어, 구체적으로)","evidence":["목록에 있는 기사 제목1","기사 제목2"]}]\n'
+        "evidence에는 위 목록에 나온 제목 문자열과 일치하거나 일부 일치하는 기사만 넣으세요.\n\n"
+        f"기사:\n{payload}"
     )
     try:
         res = _req.post(
@@ -164,21 +298,87 @@ def _generate_digest(articles: List[dict]) -> List[dict]:
         match = re.search(r"\[.*\]", raw, re.DOTALL)
         if match:
             parsed = json.loads(match.group())
-            if isinstance(parsed, list) and len(parsed) == 3:
-                return parsed
+            if isinstance(parsed, list) and len(parsed) >= 3:
+                norm: List[dict] = []
+                for item in parsed[:3]:
+                    if not isinstance(item, dict):
+                        continue
+                    norm.append({
+                        "title": str(item.get("title") or item.get("headline") or "")[:120],
+                        "body": str(item.get("body") or item.get("detail") or item.get("summary") or "")[:800],
+                        "evidence": [str(e)[:100] for e in (item.get("evidence") or item.get("refs") or [])[:3] if e],
+                    })
+                if len(norm) == 3 and all(n.get("title") and n.get("body") for n in norm):
+                    return norm
     except Exception as e:
-        logger.warning("Ollama digest generation failed: %s", e)
+        logger.warning("Ollama 3-point insights failed: %s", e)
 
-    return [
-        {
-            "title": cat,
-            "summary": "AI 기반 마케팅 전략의 주요 동향을 분석한 인사이트입니다.",
-            "key_points": ["AI 기반 마케팅 전략의 변화 가속", "데이터 기반 의사결정 체계 강화 필요"],
-            "marketing_insight": "변화 속도에 맞춘 전략 대응 주기 단축이 핵심 과제입니다.",
-            "strategic_implication": "조직 내 AI 활용 역량과 거버넌스 프레임워크를 동시에 점검해야 합니다.",
-        }
-        for cat in CATEGORIES
-    ]
+    return _fallback_three_insights(articles)
+
+
+def _localize_ai_tools(tools: List[dict]) -> List[dict]:
+    """Titles + summaries in Korean; richer text preserved."""
+    if not tools:
+        return []
+    try:
+        from translate import translate_batch
+    except Exception:
+        return [dict(t, title_ko=t.get("title", ""), summary_ko=(t.get("content") or "")[:520]) for t in tools]
+
+    titles = [(t.get("title") or "")[:240] for t in tools]
+    bodies = [((t.get("content") or ""))[:520] for t in tools]
+    t_ko = list(titles)
+    b_ko = list(bodies)
+    try:
+        if any(not _has_korean(x) for x in titles):
+            t_ko = translate_batch(titles, "ko")
+        if any(not _has_korean(x) for x in bodies):
+            b_ko = translate_batch(bodies, "ko")
+    except Exception as e:
+        logger.warning("AI tools batch translate failed: %s", e)
+
+    out: List[dict] = []
+    for t, tk, bk in zip(tools, t_ko, b_ko):
+        d = dict(t)
+        d["title_ko"] = (tk or t.get("title") or "").strip()
+        d["summary_ko"] = (bk or t.get("content") or "").strip()[:560]
+        out.append(d)
+    return out
+
+
+def _localize_articles_display(articles: List[dict], limit: int) -> List[dict]:
+    """Add display_title / display_snippet in Korean where needed."""
+    sliced = [dict(a) for a in articles[:limit]]
+    titles_en: List[str] = []
+    idx_t: List[int] = []
+    snips_en: List[str] = []
+    idx_s: List[int] = []
+    for i, a in enumerate(sliced):
+        tit = a.get("title") or ""
+        sn = (a.get("content") or "")[:200]
+        a["display_title"] = tit
+        a["display_snippet"] = sn
+        if not _has_korean(tit):
+            idx_t.append(i)
+            titles_en.append(tit[:200])
+        if not _has_korean(sn):
+            idx_s.append(i)
+            snips_en.append(sn)
+    try:
+        from translate import translate_batch
+        if titles_en:
+            kt = translate_batch(titles_en, "ko")
+            for j, i in enumerate(idx_t):
+                if j < len(kt) and kt[j]:
+                    sliced[i]["display_title"] = kt[j]
+        if snips_en:
+            ks = translate_batch(snips_en, "ko")
+            for j, i in enumerate(idx_s):
+                if j < len(ks) and ks[j]:
+                    sliced[i]["display_snippet"] = ks[j]
+    except Exception as e:
+        logger.warning("Article batch translate failed: %s", e)
+    return sliced
 
 
 def _generate_period_report(items: List[dict], period: str) -> dict:
@@ -279,46 +479,45 @@ def _render_ai_tools_html(ai_tools: List[dict]) -> str:
         return ""
     cards = ""
     for t in ai_tools:
-        title = escape(t.get("title", ""))
+        title = escape(t.get("title_ko") or t.get("title", ""))
         link = escape(t.get("link", "#"))
-        desc = escape((t.get("content") or "")[:120])
+        desc = escape(t.get("summary_ko") or (t.get("content") or "")[:520])
         source = escape(t.get("source", ""))
-        new_badge = '<span class="badge badge-new">NEW</span>' if t.get("is_new") else ""
+        new_badge = '<span class="badge badge-new">신규</span>' if t.get("is_new") else ""
         cards += f"""
         <div class="ai-tool-card">
             <p class="ai-tool-title"><a href="{link}" target="_blank">{title}</a></p>
             <p class="ai-tool-desc">{desc}</p>
-            <div class="ai-tool-meta"><span class="badge badge-tool">AI TOOL</span>{new_badge}<span>{source}</span></div>
+            <div class="ai-tool-meta"><span class="badge badge-tool">AI 도구</span>{new_badge}<span>{source}</span></div>
         </div>"""
     return f"""
-    <div class="ai-tools-header"><span class="ai-tools-label">New AI Tools</span><div class="ai-tools-line"></div></div>
+    <div class="ai-tools-header"><span class="ai-tools-label">신규 AI 툴</span><div class="ai-tools-line"></div></div>
     <div class="ai-tools-grid">{cards}</div>"""
 
 
-def _render_digest_html(digest: List[dict]) -> str:
-    if not digest:
+def _render_insights_html(insights: List[dict]) -> str:
+    """3 marketing insight points from today's articles (Korean)."""
+    if not insights:
         return ""
     cards = ""
-    for idx, d in enumerate(digest[:3], 1):
-        bullets = "".join(f'<li>{escape(kp)}</li>' for kp in d.get("key_points", [])[:3])
-        sources_links = "".join(
-            f'<a href="{escape(s.get("link", "#"))}" target="_blank">{escape(s.get("title", ""))}</a> '
-            for s in d.get("sources", [])[:3]
-        )
+    for idx, ins in enumerate(insights[:3], 1):
+        title = escape(ins.get("title") or "")
+        body = escape(ins.get("body") or "")
+        evid = ins.get("evidence") or []
+        evid_html = ""
+        if evid:
+            parts = " · ".join(escape(str(e))[:90] for e in evid[:3])
+            evid_html = f'<p class="insight-evidence">연관 기사: {parts}</p>'
         cards += f"""
-        <div class="digest-card">
+        <div class="digest-card insight-point">
             <p class="digest-num">0{idx}</p>
-            <h3 class="digest-title">{escape(d.get("title", ""))}</h3>
-            <p class="digest-summary">{escape(d.get("summary", ""))}</p>
-            <ul class="digest-kp">{bullets}</ul>
-            <p class="digest-insight-label">Marketing Insight</p>
-            <p class="digest-insight">{escape(d.get("marketing_insight", ""))}</p>
-            <p class="digest-insight-label">Strategic Implication</p>
-            <p class="digest-insight">{escape(d.get("strategic_implication", ""))}</p>
-            <div class="digest-sources">{sources_links}</div>
+            <h3 class="digest-title">{title}</h3>
+            <p class="digest-summary">{body}</p>
+            {evid_html}
         </div>"""
     return f"""
-    <p class="section-label">Today's Marketing Trend Insights</p>
+    <p class="section-label">오늘의 마케팅 인사이트</p>
+    <p class="section-sub">오늘 수집된 기사를 바탕으로 정리한 3가지 포인트입니다.</p>
     <div class="digest-grid">{cards}</div>"""
 
 
@@ -327,17 +526,17 @@ def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
         return ""
     cards = ""
     for a in articles[:limit]:
-        title = escape(a.get("title", ""))
+        title = escape(a.get("display_title") or a.get("title", ""))
         link = escape(a.get("link", "#"))
         source = escape(a.get("source", ""))
-        content = escape((a.get("content") or "")[:100])
+        content = escape(a.get("display_snippet") or (a.get("content") or "")[:200])
         badges = ""
         if a.get("is_new"):
-            badges += '<span class="badge badge-new">NEW</span>'
+            badges += '<span class="badge badge-new">신규</span>'
         if a.get("lang") == "ko":
-            badges += '<span class="badge badge-ko">KR</span>'
+            badges += '<span class="badge badge-ko">국문</span>'
         if a.get("is_research"):
-            badges += '<span class="badge badge-research">RESEARCH</span>'
+            badges += '<span class="badge badge-research">리서치</span>'
         cards += f"""
         <div class="article-card">
             <div class="article-badges">{badges}</div>
@@ -346,14 +545,14 @@ def _render_article_cards(articles: List[dict], limit: int = 18) -> str:
             <div class="article-meta"><span>{source}</span></div>
         </div>"""
     return f"""
-    <p class="section-label">Articles</p>
+    <p class="section-label">오늘의 기사</p>
     <div class="article-grid">{cards}</div>"""
 
 
 def _render_period_report_html(report: dict) -> str:
     """Render a weekly or monthly report dict as HTML content fragment."""
     period = report.get("period", "weekly")
-    period_label = "Weekly Report" if period == "weekly" else "Monthly Report"
+    period_label = "주간 리포트" if period == "weekly" else "월간 리포트"
 
     headline = escape(report.get("headline", ""))
     summary = escape(report.get("executive_summary", ""))
@@ -380,23 +579,23 @@ def _render_period_report_html(report: dict) -> str:
         if recs:
             rec_items = "".join(f'<li>{escape(r)}</li>' for r in recs[:5])
             extra += f"""
-            <p class="section-label">Strategic Recommendations</p>
+            <p class="section-label">전략 제언</p>
             <ul class="digest-kp" style="margin-bottom:24px">{rec_items}</ul>"""
         sa = report.get("source_analysis", {})
         if sa:
             extra += f"""
             <div class="report-stats">
-                <span>Total: {sa.get("total_articles", 0)} articles</span>
+                <span>총 {sa.get("total_articles", 0)}건</span>
                 <span>{escape(sa.get("language_split", ""))}</span>
-                <span>Top: {", ".join(escape(s) for s in sa.get("top_sources", [])[:3])}</span>
+                <span>주요 출처: {", ".join(escape(s) for s in sa.get("top_sources", [])[:3])}</span>
             </div>"""
         outlook = report.get("next_month_outlook", "")
         if outlook:
-            extra += f'<p class="digest-insight" style="margin-top:16px"><strong>Outlook:</strong> {escape(outlook)}</p>'
+            extra += f'<p class="digest-insight" style="margin-top:16px"><strong>다음 달 전망:</strong> {escape(outlook)}</p>'
     else:
         outlook = report.get("strategic_outlook", "")
         if outlook:
-            extra += f'<p class="digest-insight" style="margin-top:16px"><strong>Outlook:</strong> {escape(outlook)}</p>'
+            extra += f'<p class="digest-insight" style="margin-top:16px"><strong>전망:</strong> {escape(outlook)}</p>'
 
     count = report.get("article_count", 0)
     gen_at = report.get("generated_at", "")[:10]
@@ -405,7 +604,7 @@ def _render_period_report_html(report: dict) -> str:
     <p class="section-label">{period_label}</p>
     <div class="report-header">
         <h2 class="report-headline">{headline}</h2>
-        <p class="report-meta">{count} articles analyzed &middot; {gen_at}</p>
+        <p class="report-meta">{count}건 분석 &middot; {gen_at}</p>
     </div>
     <p class="digest-summary" style="margin-bottom:20px">{summary}</p>
     <div class="digest-grid">{sections_html}</div>
@@ -433,36 +632,39 @@ def _html_wrapper(title: str, css_path: str, body: str) -> str:
 
 def build_daily_page(
     date_str: str,
-    digest: List[dict],
+    insights: List[dict],
     articles: List[dict],
     ai_tools: List[dict] | None = None,
     prev_date: str | None = None,
     next_date: str | None = None,
 ) -> str:
-    ai_tools = ai_tools or []
+    ai_tools_ko = _localize_ai_tools(ai_tools or [])
+    articles_ko = _localize_articles_display(articles, 18)
     nav_left = f'<a href="{prev_date}.html">&larr; {prev_date}</a>' if prev_date else '<span></span>'
     nav_right = f'<a href="{next_date}.html">{next_date} &rarr;</a>' if next_date else '<span></span>'
+    tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
 
     body = f"""
     <header class="masthead">
         <div><p class="masthead-wordmark">Marketing AI Brief</p>
-        <h1 class="masthead-title">Today's Marketing AI Insight</h1></div>
+        <h1 class="masthead-title">오늘의 마케팅 AI 인사이트</h1></div>
         <div class="masthead-right">
             <p class="masthead-date">{escape(date_str)} (KST)</p>
-            <p class="masthead-count">{len(articles)} articles{f" · {len(ai_tools)} tools" if ai_tools else ""}</p>
+            <p class="masthead-count">기사 {len(articles)}건{tool_line}</p>
         </div>
     </header>
     <nav class="nav">
         {nav_left}
-        <span class="nav-center"><a href="../index.html">All Issues</a></span>
+        <span class="nav-center"><a href="../index.html">전체 목록</a></span>
         {nav_right}
     </nav>
-    {_render_ai_tools_html(ai_tools)}
-    {_render_digest_html(digest)}
-    {_render_article_cards(articles)}
+    {_subscribe_banner_html()}
+    {_render_ai_tools_html(ai_tools_ko)}
+    {_render_insights_html(insights)}
+    {_render_article_cards(articles_ko)}
     <footer class="footer">
-        <p>Marketing AI Brief &middot; Powered by Ollama + Streamlit</p>
-        <p><a href="../index.html">All Issues</a></p>
+        <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
+        <p><a href="../index.html">전체 목록</a></p>
     </footer>"""
     return _html_wrapper(f"Marketing AI Brief — {date_str}", _CSS_REL_PATH, body)
 
@@ -470,7 +672,7 @@ def build_daily_page(
 def build_index_page(
     latest_date: str,
     latest_articles: List[dict],
-    latest_digest: List[dict],
+    latest_insights: List[dict],
     latest_ai_tools: List[dict],
     recent_issues: List[dict],
     older_issues: List[dict],
@@ -481,40 +683,34 @@ def build_index_page(
     from zoneinfo import ZoneInfo
     now = datetime.now(ZoneInfo("Asia/Seoul"))
 
-    # ── Subscribe banner ──
-    subscribe_html = """
-    <div class="subscribe-banner">
-        <div class="sub-icon">📮</div>
-        <div class="sub-copy">
-            <p class="sub-title">매일 오전 8시, 마케팅 AI 인사이트를 받아보세요</p>
-            <p class="sub-desc">Daily Brief를 가장 먼저 받아보는 무료 구독</p>
-        </div>
-    </div>"""
+    ai_tools_ko = _localize_ai_tools(latest_ai_tools)
+    articles_ko = _localize_articles_display(latest_articles, 9)
 
-    # ── Today's content (full, like the Streamlit dashboard) ──
-    ai_tools_html = _render_ai_tools_html(latest_ai_tools)
-    digest_html = _render_digest_html(latest_digest)
-    articles_html = _render_article_cards(latest_articles, limit=9)
+    subscribe_html = _subscribe_banner_html()
 
-    # ── Tabs: Daily / Weekly / Monthly ──
+    ai_tools_html = _render_ai_tools_html(ai_tools_ko)
+    insights_html = _render_insights_html(latest_insights)
+    articles_html = _render_article_cards(articles_ko, limit=9)
+
     tabs_html = _build_tabs(recent_issues, older_issues, weekly_reports, monthly_reports)
+    tool_line = f" · AI 툴 {len(ai_tools_ko)}건" if ai_tools_ko else ""
 
     body = f"""
     <header class="masthead">
         <div><p class="masthead-wordmark">Marketing AI Brief</p>
-        <h1 class="masthead-title">Today's Marketing AI Insight</h1></div>
+        <h1 class="masthead-title">오늘의 마케팅 AI 인사이트</h1></div>
         <div class="masthead-right">
-            <p class="masthead-date">{escape(now.strftime("%Y-%m-%d %H:%M"))} KST</p>
-            <p class="masthead-count">{len(latest_articles)} articles{f" · {len(latest_ai_tools)} tools" if latest_ai_tools else ""}</p>
+            <p class="masthead-date">최신 이슈일 {escape(latest_date)} · {escape(now.strftime("%Y-%m-%d %H:%M"))} KST</p>
+            <p class="masthead-count">기사 {len(latest_articles)}건{tool_line}</p>
         </div>
     </header>
     {subscribe_html}
     {ai_tools_html}
-    {digest_html}
+    {insights_html}
     {articles_html}
     {tabs_html}
     <footer class="footer">
-        <p>Marketing AI Brief &middot; Powered by Ollama + Streamlit</p>
+        <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
     </footer>"""
     return _html_wrapper("Marketing AI Brief", _CSS_INDEX_PATH, body)
 
@@ -533,9 +729,9 @@ def _build_tabs(
         date = escape(issue["date"])
         count = issue.get("article_count", 0)
         tools = issue.get("tool_count", 0)
-        meta = f"{count} articles"
+        meta = f"기사 {count}건"
         if tools:
-            meta += f" · {tools} tools"
+            meta += f" · AI 툴 {tools}건"
         recent_cards += f"""
         <div class="archive-card">
             <a href="issues/{date}.html" class="archive-card-link">
@@ -551,7 +747,7 @@ def _build_tabs(
         older_list += f"""
         <li class="issue-item">
             <a class="issue-date" href="issues/{date}.html">{date}</a>
-            <span class="issue-meta">{count} articles</span>
+            <span class="issue-meta">기사 {count}건</span>
             <span class="issue-arrow">&rarr;</span>
         </li>"""
 
@@ -566,15 +762,15 @@ def _build_tabs(
             items += f"""
             <li class="issue-item">
                 <a class="issue-date" href="reports/{key}.html">{label}</a>
-                <span class="issue-meta">{count} articles</span>
+                <span class="issue-meta">기사 {count}건</span>
                 <span class="issue-arrow">&rarr;</span>
             </li>"""
         weekly_html = f"""
-        <p class="section-label">📊 Weekly Reports</p>
+        <p class="section-label">📊 주간 리포트</p>
         <ul class="issue-list">{items}</ul>"""
     else:
         weekly_html = """
-        <p class="section-label">📊 Weekly Reports</p>
+        <p class="section-label">📊 주간 리포트</p>
         <p class="coming-soon">기사가 충분히 누적되면 주간 리포트가 자동 생성됩니다.</p>"""
 
     # ── Monthly Reports ──
@@ -588,21 +784,21 @@ def _build_tabs(
             items += f"""
             <li class="issue-item">
                 <a class="issue-date" href="reports/{key}.html">{label}</a>
-                <span class="issue-meta">{count} articles</span>
+                <span class="issue-meta">기사 {count}건</span>
                 <span class="issue-arrow">&rarr;</span>
             </li>"""
         monthly_html = f"""
-        <p class="section-label">📈 Monthly Reports</p>
+        <p class="section-label">📈 월간 리포트</p>
         <ul class="issue-list">{items}</ul>"""
     else:
         monthly_html = """
-        <p class="section-label">📈 Monthly Reports</p>
+        <p class="section-label">📈 월간 리포트</p>
         <p class="coming-soon">기사가 충분히 누적되면 월간 리포트가 자동 생성됩니다.</p>"""
 
     archive_section = ""
     if recent_cards:
         archive_section += f"""
-        <p class="section-label">Daily Brief Archive</p>
+        <p class="section-label">데일리 브리프 아카이브</p>
         <div class="archive-grid">{recent_cards}</div>"""
     if older_list:
         archive_section += f"""
@@ -622,25 +818,25 @@ def _build_tabs(
 def build_report_page(report: dict, report_key: str) -> str:
     """Build an individual weekly/monthly report page."""
     period = report.get("period", "weekly")
-    label = "Weekly Report" if period == "weekly" else "Monthly Report"
+    label = "주간 리포트" if period == "weekly" else "월간 리포트"
     body = f"""
     <header class="masthead">
         <div><p class="masthead-wordmark">Marketing AI Brief</p>
         <h1 class="masthead-title">{label}</h1></div>
         <div class="masthead-right">
             <p class="masthead-date">{escape(report.get("generated_at", "")[:10])}</p>
-            <p class="masthead-count">{report.get("article_count", 0)} articles analyzed</p>
+            <p class="masthead-count">{report.get("article_count", 0)}건 분석</p>
         </div>
     </header>
     <nav class="nav">
         <span></span>
-        <span class="nav-center"><a href="../index.html">All Issues</a></span>
+        <span class="nav-center"><a href="../index.html">전체 목록</a></span>
         <span></span>
     </nav>
     {_render_period_report_html(report)}
     <footer class="footer">
-        <p>Marketing AI Brief &middot; Powered by Ollama + Streamlit</p>
-        <p><a href="../index.html">All Issues</a></p>
+        <p>Marketing AI Brief &middot; Ollama + Streamlit</p>
+        <p><a href="../index.html">전체 목록</a></p>
     </footer>"""
     return _html_wrapper(f"Marketing AI Brief — {label}", _CSS_REPORTS_REL, body)
 
@@ -653,14 +849,14 @@ def publish_single_date(date_str: str, dates_list: List[str] | None = None, is_l
         logger.info("No articles for %s — skipping.", date_str)
         return None
 
-    digest = _load_digest_for_date(date_str)
-    if not digest:
-        digest = _generate_digest(articles)
-        _save_report_data(f"daily-{date_str}", digest)
+    insights = _load_insights_for_date(date_str)
+    if not insights:
+        insights = _generate_three_marketing_insights(articles)
+        _save_report_data(f"insights-{date_str}", insights)
 
     ai_tools = _get_ai_tools_for_date(date_str)
     if not ai_tools and is_latest:
-        ai_tools = _fetch_live_ai_tools(limit=6)
+        ai_tools = _fetch_live_ai_tools(limit=8)
 
     if dates_list is None:
         dates_list = _all_dates()
@@ -668,7 +864,7 @@ def publish_single_date(date_str: str, dates_list: List[str] | None = None, is_l
     prev_date = dates_list[idx + 1] if idx >= 0 and idx + 1 < len(dates_list) else None
     next_date = dates_list[idx - 1] if idx > 0 else None
 
-    html = build_daily_page(date_str, digest, articles, ai_tools, prev_date, next_date)
+    html = build_daily_page(date_str, insights, articles, ai_tools, prev_date, next_date)
     _ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     out = _ISSUES_DIR / f"{date_str}.html"
     out.write_text(html, encoding="utf-8")
@@ -788,7 +984,7 @@ def publish_index() -> Path:
     if not dates:
         html = _html_wrapper("Marketing AI Brief", _CSS_INDEX_PATH,
                              '<header class="masthead"><div><p class="masthead-wordmark">Marketing AI Brief</p>'
-                             '<h1 class="masthead-title">Newsletter Archive</h1></div></header>'
+                             '<h1 class="masthead-title">뉴스레터 아카이브</h1></div></header>'
                              '<p class="coming-soon">아직 수집된 기사가 없습니다.</p>')
         out = _DOCS_DIR / "index.html"
         out.write_text(html, encoding="utf-8")
@@ -796,12 +992,15 @@ def publish_index() -> Path:
 
     latest_date = dates[0]
     latest_articles = _articles_for_date(latest_date)
-    latest_digest = _load_digest_for_date(latest_date)
+    latest_insights = _load_insights_for_date(latest_date)
+    if not latest_insights:
+        latest_insights = _generate_three_marketing_insights(latest_articles)
+        _save_report_data(f"insights-{latest_date}", latest_insights)
 
     # AI tools: try archive first, then fetch live
     latest_ai_tools = _get_ai_tools_for_date(latest_date)
     if not latest_ai_tools:
-        latest_ai_tools = _fetch_live_ai_tools(limit=6)
+        latest_ai_tools = _fetch_live_ai_tools(limit=8)
 
     # Recent = last 7 days of issues (as cards), older = the rest (collapsed)
     recent_issues = []
@@ -820,7 +1019,7 @@ def publish_index() -> Path:
     monthly_reports = _generate_monthly_reports()
 
     html = build_index_page(
-        latest_date, latest_articles, latest_digest, latest_ai_tools,
+        latest_date, latest_articles, latest_insights, latest_ai_tools,
         recent_issues, older_issues, weekly_reports, monthly_reports,
     )
     _DOCS_DIR.mkdir(parents=True, exist_ok=True)
@@ -849,9 +1048,26 @@ def publish_all() -> None:
         logger.info("No archived dates found.")
         return
     for d in dates:
-        publish_single_date(d, dates)
+        publish_single_date(d, dates, is_latest=(d == dates[0]))
     publish_index()
     logger.info("Published %d issues.", len(dates))
+
+
+def _find_git() -> str:
+    """Find git executable, searching common install paths on Windows."""
+    import shutil
+    g = shutil.which("git")
+    if g:
+        return g
+    candidates = [
+        r"C:\Program Files\Git\cmd\git.exe",
+        r"C:\Program Files\Git\bin\git.exe",
+        r"C:\Program Files (x86)\Git\cmd\git.exe",
+    ]
+    for c in candidates:
+        if Path(c).exists():
+            return c
+    raise FileNotFoundError("git executable not found. Please install Git or add it to PATH.")
 
 
 def git_push(message: str | None = None) -> bool:
@@ -861,24 +1077,28 @@ def git_push(message: str | None = None) -> bool:
         message = f"Newsletter update {today}"
 
     try:
-        subprocess.run(["git", "add", "docs/"], cwd=str(_PROJECT_ROOT), check=True, capture_output=True)
+        git = _find_git()
+        subprocess.run([git, "add", "docs/"], cwd=str(_PROJECT_ROOT), check=True, capture_output=True)
         result = subprocess.run(
-            ["git", "diff", "--cached", "--quiet"],
+            [git, "diff", "--cached", "--quiet"],
             cwd=str(_PROJECT_ROOT), capture_output=True,
         )
         if result.returncode == 0:
             logger.info("No changes to commit.")
             return True
         subprocess.run(
-            ["git", "commit", "-m", message],
+            [git, "commit", "-m", message],
             cwd=str(_PROJECT_ROOT), check=True, capture_output=True,
         )
         subprocess.run(
-            ["git", "push"],
+            [git, "push"],
             cwd=str(_PROJECT_ROOT), check=True, capture_output=True,
         )
         logger.info("Pushed to remote: %s", message)
         return True
+    except FileNotFoundError as e:
+        logger.error("Git not found: %s", e)
+        return False
     except subprocess.CalledProcessError as e:
         logger.error("Git operation failed: %s — %s", e, e.stderr)
         return False
